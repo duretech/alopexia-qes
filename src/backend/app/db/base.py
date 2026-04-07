@@ -23,7 +23,7 @@ class TenantScopedMixin:
     Every tenant-scoped query MUST filter by tenant_id."""
 
     @declared_attr
-    def tenant_id(cls) -> Column:
+    def tenant_id(cls):
         return Column(
             UUID(as_uuid=True),
             nullable=False,

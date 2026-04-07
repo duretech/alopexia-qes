@@ -3,8 +3,8 @@
 > This document contains every setup instruction needed to get the platform running.
 > It is updated as new components are built. Check the **Last Updated** date below.
 
-**Last Updated**: 2026-04-06  
-**Current Build Phase**: Phase B (Database ready, backend skeleton next)
+**Last Updated**: 2026-04-07  
+**Current Build Phase**: Phase B (Backend skeleton complete, audit service next)
 
 ---
 
@@ -17,7 +17,7 @@
 5. [Encryption Key Generation](#5-encryption-key-generation)
 6. [Running Migrations](#6-running-migrations)
 7. [Verifying the Database](#7-verifying-the-database)
-8. [Backend API](#8-backend-api) *(not yet implemented)*
+8. [Backend API](#8-backend-api)
 9. [Frontend Portals](#9-frontend-portals) *(not yet implemented)*
 10. [Object Storage (S3/MinIO)](#10-object-storage-s3minio) *(not yet implemented)*
 11. [Queue (SQS/LocalStack)](#11-queue-sqslocalstack) *(not yet implemented)*
@@ -352,13 +352,90 @@ SELECT * FROM alopexiaqes.alembic_version;
 
 ## 8. Backend API
 
-> **Status:** Not yet implemented. This section will be updated when the FastAPI application is built.
+### 8.1 Starting the backend server
 
-Will cover:
-- Starting the FastAPI server
-- API base URL and docs (Swagger UI)
-- Health check endpoints
-- Authentication setup
+```bash
+cd src/backend
+
+# Activate your virtual environment (if not already active)
+source .venv/bin/activate       # macOS/Linux
+# .venv\Scripts\activate        # Windows
+
+# Ensure environment variables are set (via .env or export)
+# Required: DATABASE_URL, APP_SECRET_KEY, FIELD_ENCRYPTION_KEY
+
+# Start the development server
+uvicorn app.main:app --reload
+```
+
+The server starts on `http://localhost:8000` by default.
+
+### 8.2 API documentation (development only)
+
+In non-production environments, interactive API docs are available:
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8000/docs` | Swagger UI (interactive) |
+| `http://localhost:8000/redoc` | ReDoc (read-only) |
+| `http://localhost:8000/openapi.json` | OpenAPI JSON spec |
+
+> **Note:** These endpoints are disabled in production (`APP_ENV=production`) to prevent information disclosure.
+
+### 8.3 Health check endpoints
+
+| Endpoint | Method | Purpose | Auth Required |
+|----------|--------|---------|---------------|
+| `/health/live` | GET | Liveness probe — returns 200 if the process is up | No |
+| `/health/ready` | GET | Readiness probe — checks DB connectivity, returns 200 or 503 | No |
+
+Example:
+```bash
+curl http://localhost:8000/health/live
+# {"status": "ok", "timestamp": "2026-04-07T10:00:00+00:00"}
+
+curl http://localhost:8000/health/ready
+# {"status": "ok", "timestamp": "...", "checks": {"database": "ok"}}
+```
+
+### 8.4 Request tracing
+
+Every response includes tracing headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-Request-ID` | Unique ID for this request |
+| `X-Correlation-ID` | Correlation ID (forwarded from client or auto-generated) |
+
+To forward your own correlation ID, include `X-Correlation-ID` in the request headers.
+
+### 8.5 Running tests
+
+```bash
+cd src/backend
+
+# Run all tests
+python -m pytest -v
+
+# Run only health endpoint smoke tests
+python -m pytest tests/api/test_health.py -v
+```
+
+### 8.6 Middleware stack
+
+The backend applies the following middleware (outermost first):
+
+1. **Correlation IDs** — generates request_id, forwards correlation_id
+2. **Request logging** — structured JSON logs with method, path, status, duration
+3. **Security headers** — HSTS, CSP, X-Frame-Options, etc.
+4. **Rate limiting** — per-IP token bucket (configurable via `RATE_LIMIT_DEFAULT`)
+5. **Audit emission** — captures audit context for downstream services
+6. **CORS** — configured from `APP_CORS_ORIGINS`
+7. **Trusted hosts** — configured from `APP_ALLOWED_HOSTS`
+
+### 8.7 Authentication setup
+
+> **Status:** Not yet implemented. Will be added when the auth/authz layer is built. Currently no endpoints require authentication.
 
 ---
 
