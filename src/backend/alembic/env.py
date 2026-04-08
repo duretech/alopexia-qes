@@ -22,11 +22,12 @@ import app.models  # noqa: F401
 config = context.config
 
 # Allow DATABASE_URL env var to override alembic.ini
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
+_database_url_override = os.environ.get("DATABASE_URL")
+if _database_url_override:
     # Alembic needs sync driver — swap asyncpg for psycopg2 if needed
-    database_url = database_url.replace("+asyncpg", "+psycopg2")
-    config.set_main_option("sqlalchemy.url", database_url)
+    _database_url_override = _database_url_override.replace("+asyncpg", "+psycopg2")
+    # Escape % for configparser interpolation (% -> %%)
+    config.set_main_option("sqlalchemy.url", _database_url_override.replace("%", "%%"))
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -66,9 +67,13 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             version_table_schema=SCHEMA_NAME,
             include_schemas=True,
+            transaction_per_migration=False,
         )
         with context.begin_transaction():
             context.run_migrations()
+        # SQLAlchemy 2.0 requires explicit commit; without it the
+        # connection context-manager issues ROLLBACK on exit.
+        connection.commit()
 
 
 if context.is_offline_mode():

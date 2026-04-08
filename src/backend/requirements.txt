@@ -20,8 +20,10 @@ passlib[bcrypt]==1.7.4
 httpx==0.28.1
 
 # AWS / S3 / SQS
-boto3==1.35.86
 aioboto3==13.3.0
+aiobotocore==2.16.0
+boto3>=1.35.74,<1.35.82
+botocore>=1.35.74,<1.35.82
 
 # PDF Processing
 pypdf==5.1.0

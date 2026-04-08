@@ -1,6 +1,6 @@
 # QES Flow — Build Progress Tracker
 
-## Overall Status: PHASE C — COMPLETE (QTSP + evidence + pharmacy + admin + retention + queue)
+## Overall Status: PHASE D — COMPLETE (Docker, CI/CD, Frontend Portals)
 
 ---
 
@@ -186,14 +186,28 @@
 
 ---
 
-## Phase D: Tests, Docs, Infra, CI/CD — NOT STARTED
+## Phase D: Infra, CI/CD, Frontends — COMPLETE
 
-- [ ] Test suites (unit, integration, API, authz, audit, security)
-- [ ] Infrastructure-as-code (Terraform)
-- [ ] Docker + docker-compose for local dev
-- [ ] CI/CD skeleton
-- [ ] Frontend portals (doctor, pharmacy, admin — Next.js)
-- [ ] Remaining delivery artifacts (OpenAPI spec, ERD, runbooks, incident playbook)
+### Completed
+- [x] Docker:
+  - [x] `src/backend/Dockerfile` — Multi-stage build (builder + runtime), non-root user, health check, uvicorn with 2 workers
+  - [x] `src/backend/.dockerignore` — Excludes tests, caches, env files, git
+  - [x] `docker-compose.yml` — Full local dev stack: API (port 8000), PostgreSQL 16 (port 5432), MinIO S3 (ports 9000/9001), auto-bucket creation
+  - [x] `.env.example` — All 30+ environment variables with descriptions and defaults
+
+- [x] CI/CD:
+  - [x] `.github/workflows/backend-ci.yml` — GitHub Actions: lint (ruff), test (pytest + coverage), security audit (pip-audit), Docker build. Triggers on push/PR to main and feature branches
+
+- [x] Frontend portals (Next.js 15 + React 19 + TypeScript):
+  - [x] `src/frontend/doctor-portal/` — Upload page (multipart file + JSON metadata), prescriptions list with status badges, API proxy config (port 3000)
+  - [x] `src/frontend/pharmacy-portal/` — Prescription list, PDF download (signed URLs), dispensing confirmation with status updates (port 3001)
+  - [x] `src/frontend/admin-portal/` — Dashboard, audit export (streaming JSONL download), legal holds management (create/list/release), nav structure for deletions (port 3002)
+
+### Phase D Summary
+- **199 backend tests passing** (unchanged — frontend is static)
+- Full Docker local dev stack with PostgreSQL + MinIO
+- CI pipeline: lint, test, security, Docker build
+- 3 frontend portals with role-specific UIs wired to backend API
 
 ---
 

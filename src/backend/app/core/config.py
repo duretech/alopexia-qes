@@ -1,8 +1,13 @@
 """Application configuration loaded from environment variables."""
 
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field
 from typing import Optional
+
+# Resolve .env from project root (two levels up from app/core/)
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
+_ENV_FILE = _PROJECT_ROOT / ".env" if (_PROJECT_ROOT / ".env").exists() else ".env"
 
 
 class Settings(BaseSettings):
@@ -89,7 +94,7 @@ class Settings(BaseSettings):
         return self.app_env == "production"
 
     model_config = {
-        "env_file": ".env",
+        "env_file": str(_ENV_FILE),
         "case_sensitive": False,
     }
 

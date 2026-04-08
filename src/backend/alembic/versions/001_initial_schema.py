@@ -36,7 +36,16 @@ def upgrade() -> None:
     # 0. Schema and extensions
     # =========================================================================
     op.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}")
-    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")  # for gen_random_uuid, digest()
+    # pgcrypto: gen_random_uuid() is built-in since PG13.
+    # CREATE EXTENSION requires superuser — use a savepoint so failure
+    # doesn't abort the migration transaction.
+    conn = op.get_bind()
+    conn.execute(sa.text("SAVEPOINT pgcrypto_sp"))
+    try:
+        conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+        conn.execute(sa.text("RELEASE SAVEPOINT pgcrypto_sp"))
+    except Exception:
+        conn.execute(sa.text("ROLLBACK TO SAVEPOINT pgcrypto_sp"))
 
     # Auto-update updated_at on any row modification
     op.execute(f"""
