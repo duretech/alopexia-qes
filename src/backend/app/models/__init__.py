@@ -16,6 +16,7 @@ from app.models.access_review import AccessReview
 from app.models.break_glass import BreakGlassEvent
 from app.models.api_credential import ApiCredentialMetadata
 from app.models.session import SessionRecord
+from app.models.mfa_totp import TotpCredential
 
 __all__ = [
     "Tenant", "Clinic",
@@ -34,4 +35,5 @@ __all__ = [
     "BreakGlassEvent",
     "ApiCredentialMetadata",
     "SessionRecord",
+    "TotpCredential",
 ]

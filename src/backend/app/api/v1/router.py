@@ -6,13 +6,16 @@ All v1 routes are served under the /api/v1 prefix (set in main.py).
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import health, prescriptions, pharmacy, admin
+from app.api.v1.endpoints import health, prescriptions, pharmacy, admin, auth
 
 api_router = APIRouter()
 
 # Health checks are mounted at /health/* (no /api/v1 prefix — they're
 # infrastructure endpoints). They're included on the main app directly
 # in main.py rather than here.
+
+# Authentication (portal login + MFA)
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # Prescription endpoints (doctor upload)
 api_router.include_router(

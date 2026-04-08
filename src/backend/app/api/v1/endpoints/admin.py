@@ -202,6 +202,38 @@ async def release_legal_hold(
 # ── Deletion Requests ────────────────────────────────────────────────────
 
 
+@router.get(
+    "/deletion-requests",
+    response_model=list[DeletionRequestResponse],
+    summary="List deletion requests for the tenant",
+)
+async def list_deletion_requests(
+    user: AuthenticatedUser = Depends(require_permission(Permission.RETENTION_APPROVE_DELETION)),
+    db: AsyncSession = Depends(get_db),
+) -> list[DeletionRequestResponse]:
+    stmt = (
+        select(DeletionRequest)
+        .where(DeletionRequest.tenant_id == user.tenant_id)
+        .order_by(DeletionRequest.requested_at.desc())
+        .limit(200)
+    )
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+    return [
+        DeletionRequestResponse(
+            id=r.id,
+            target_type=r.target_type,
+            target_id=r.target_id,
+            deletion_type=r.deletion_type,
+            reason=r.reason,
+            status=r.status,
+            requested_by=r.requested_by,
+            requested_at=r.requested_at,
+        )
+        for r in rows
+    ]
+
+
 @router.post(
     "/deletion-requests",
     response_model=DeletionRequestResponse,

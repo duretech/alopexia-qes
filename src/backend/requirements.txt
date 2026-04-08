@@ -30,6 +30,7 @@ pypdf==5.1.0
 
 # Security
 cryptography==44.0.0
+pyotp==2.9.0
 
 # Observability
 structlog==24.4.0

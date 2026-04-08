@@ -18,9 +18,8 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"],
+      "@qes-ui/*": ["../shared/*"]
     },
     "plugins": [
       {
@@ -31,6 +30,8 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "../shared/**/*.ts",
+    "../shared/**/*.tsx",
     "next-env.d.ts",
     ".next/types/**/*.ts"
   ],

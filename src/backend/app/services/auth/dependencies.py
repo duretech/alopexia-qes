@@ -47,11 +47,15 @@ def _get_session_manager() -> SessionManager:
 def _extract_token(request: Request) -> str | None:
     """Extract session token from header or cookie.
 
-    Prefers the header (for API clients) over the cookie (for browsers).
+    Order: X-Session-Token, Authorization Bearer, session cookie.
     """
     token = request.headers.get(_SESSION_HEADER)
     if token:
         return token
+
+    auth = request.headers.get("Authorization")
+    if auth and auth.lower().startswith("bearer "):
+        return auth[7:].strip()
 
     token = request.cookies.get(_SESSION_COOKIE)
     return token

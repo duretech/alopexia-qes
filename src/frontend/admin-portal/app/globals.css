@@ -1,0 +1,7 @@
+@import "../../shared/styles/tokens.css";
+@import "../../shared/styles/components.css";
+
+a:hover .qes-dash-card {
+  border-color: var(--neutral-300);
+  box-shadow: var(--shadow-md);
+}

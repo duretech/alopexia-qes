@@ -14,10 +14,13 @@ Tenant scoping: tenant_id from authenticated session, never from request.
 import json
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.db.session import get_db
+from app.models.prescription import Prescription
+from app.schemas.pharmacy import PrescriptionListItem
 from app.schemas.ingestion import (
     PrescriptionUploadMetadata,
     PrescriptionUploadResponse,
@@ -38,6 +41,43 @@ from app.services.ingestion.validators import ValidationError
 logger = get_logger(component="prescriptions_endpoint")
 
 router = APIRouter()
+
+
+@router.get(
+    "",
+    response_model=list[PrescriptionListItem],
+    summary="List prescriptions uploaded by the current doctor",
+)
+async def list_my_prescriptions(
+    user: AuthenticatedUser = Depends(require_permission(Permission.PRESCRIPTION_VIEW_OWN)),
+    db: AsyncSession = Depends(get_db),
+) -> list[PrescriptionListItem]:
+    stmt = (
+        select(Prescription)
+        .where(
+            Prescription.tenant_id == user.tenant_id,
+            Prescription.doctor_id == user.user_id,
+            Prescription.is_deleted.is_(False),
+        )
+        .order_by(Prescription.created_at.desc())
+        .limit(100)
+    )
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+    return [
+        PrescriptionListItem(
+            id=rx.id,
+            status=rx.status,
+            verification_status=rx.verification_status,
+            dispensing_status=rx.dispensing_status,
+            doctor_id=rx.doctor_id,
+            patient_id=rx.patient_id,
+            upload_checksum=rx.upload_checksum,
+            prescribed_date=rx.prescribed_date,
+            created_at=rx.created_at,
+        )
+        for rx in rows
+    ]
 
 
 @router.post(
