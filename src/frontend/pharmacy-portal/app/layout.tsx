@@ -1,40 +1,33 @@
 import type { Metadata } from "next";
+import "./globals.css";
+import { AuthProvider } from "@/lib/auth";
+import { ToastProvider } from "@/components/ui/toast";
+import { Sidebar } from "@/components/sidebar";
 
 export const metadata: Metadata = {
   title: "QES Flow — Pharmacy Portal",
   description: "Prescription dispensing and management for pharmacies",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
-        <header
-          style={{
-            background: "#276749",
-            color: "white",
-            padding: "1rem 2rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: "1.25rem" }}>
-            QES Flow — Pharmacy Portal
-          </h1>
-          <nav style={{ display: "flex", gap: "1.5rem" }}>
-            <a href="/" style={{ color: "white", textDecoration: "none" }}>
-              Prescriptions
-            </a>
-          </nav>
-        </header>
-        <main style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
-          {children}
-        </main>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body>
+        <AuthProvider>
+          <ToastProvider>
+            <Sidebar />
+            <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {children}
+              </div>
+            </main>
+          </ToastProvider>
+        </AuthProvider>
       </body>
     </html>
   );
