@@ -18,7 +18,6 @@ interface HealthStats {
   };
   verifications: {
     by_status: Record<string, number>;
-    pending_manual_review: number;
   };
   compliance: {
     open_incidents: number;
@@ -133,9 +132,9 @@ export default function HealthPage() {
             <CardHeader title="Compliance status" />
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "1rem" }}>
               <StatCard
-                label="Pending manual review"
-                value={stats.verifications.pending_manual_review}
-                tone={stats.verifications.pending_manual_review > 0 ? "warning" : "neutral"}
+                label="Verifications"
+                value={Object.values(stats.verifications.by_status).reduce((a, b) => a + b, 0)}
+                tone="neutral"
                 href="/verifications"
               />
               <StatCard

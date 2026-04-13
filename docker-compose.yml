@@ -92,6 +92,9 @@ services:
       S3_PRESCRIPTION_BUCKET: qesflow-prescriptions
       S3_EVIDENCE_BUCKET: qesflow-evidence
       S3_AUDIT_EXPORT_BUCKET: qesflow-audit-exports
+    volumes:
+      - ./src/backend:/app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     depends_on:
       minio:
         condition: service_healthy
