@@ -87,6 +87,10 @@ class IngestionResult:
     estimated_page_count: int | None
     scan_status: str
     is_duplicate_content: bool
+    # Verification result (populated synchronously after upload)
+    verification_status: str | None = None
+    verification_id: uuid.UUID | None = None
+    prescription_status: str = "pending_verification"
 
 
 async def ingest_prescription(
@@ -327,9 +331,44 @@ async def ingest_prescription(
         doctor_id=str(doctor_id),
     )
 
-    # ── Step 10: (Future) Enqueue verification job ───────────────────────
-    # TODO: await enqueue_verification_job(prescription_id, storage_key, checksum)
-    # This will be wired when the queue/worker infrastructure is built (Phase C).
+    # ── Step 10: Run QTSP signature verification synchronously ───────────
+    # Call Dokobit (or configured QTSP provider) immediately after upload.
+    # The verification result is written to the DB within the same transaction.
+    # If the QTSP call fails, the prescription is still saved (with
+    # status=pending_verification) so it can be retried; we log the error
+    # but do not propagate it as an ingestion failure.
+    from app.services.qtsp.verification_service import (
+        verify_prescription,
+        VerificationServiceError,
+    )
+
+    verification_status: str | None = None
+    verification_id: uuid.UUID | None = None
+    prescription_status: str = "pending_verification"
+
+    try:
+        v_outcome = await verify_prescription(
+            db,
+            prescription_id=prescription_id,
+            tenant_id=tenant_id,
+            storage_backend=storage,
+        )
+        verification_status = v_outcome.status
+        verification_id = v_outcome.verification_id
+        prescription_status = _map_verification_to_prescription_status(v_outcome.status)
+    except VerificationServiceError as e:
+        logger.error(
+            "verification_failed_after_ingestion",
+            prescription_id=str(prescription_id),
+            error=str(e),
+            retryable=e.retryable,
+        )
+    except Exception as e:
+        logger.error(
+            "verification_unexpected_error",
+            prescription_id=str(prescription_id),
+            error=str(e),
+        )
 
     return IngestionResult(
         prescription_id=prescription_id,
@@ -342,6 +381,9 @@ async def ingest_prescription(
         estimated_page_count=pdf_info.estimated_page_count,
         scan_status=scan_result.verdict.value,
         is_duplicate_content=False,
+        verification_status=verification_status,
+        verification_id=verification_id,
+        prescription_status=prescription_status,
     )
 
 
@@ -366,6 +408,18 @@ async def _check_idempotency_key(
     result = await db.execute(stmt)
     row = result.scalar_one_or_none()
     return row
+
+
+def _map_verification_to_prescription_status(status: str) -> str:
+    """Map QTSP verification status string to prescription lifecycle status."""
+    return {
+        "verified": "verified",
+        "failed": "failed_verification",
+        "expired": "failed_verification",
+        "revoked": "failed_verification",
+        "indeterminate": "manual_review",
+        "error": "pending_verification",
+    }.get(status, "pending_verification")
 
 
 def _generate_storage_key(tenant_id: uuid.UUID, checksum: str) -> str:

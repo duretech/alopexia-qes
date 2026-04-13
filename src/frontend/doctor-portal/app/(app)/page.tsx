@@ -68,7 +68,7 @@ export default function UploadPage() {
           onChange={(e) => setPatientId(e.target.value)}
           required
           placeholder={DEMO_PATIENT}
-          hint="Dev seed patient UUID (see scripts/seed_dev_users.sql)"
+          // hint="Dev seed patient UUID (see scripts/seed_dev_users.sql)"
         />
         <TextField
           label="Idempotency key"

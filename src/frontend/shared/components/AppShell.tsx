@@ -68,8 +68,8 @@ export function AppShell(props: AppShellProps) {
             <h2 className="qes-topbar__title">{portalLabel}</h2>
           </div>
           <div className="qes-topbar__actions">
-            <span className="qes-user-chip" title={user.email}>
-              {user.full_name || user.email}
+            <span className="qes-user-chip" title={user.phone_number}>
+              {user.full_name || user.phone_number}
             </span>
             <Button variant="secondary" onClick={onLogout}>
               Sign out

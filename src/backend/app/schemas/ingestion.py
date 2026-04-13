@@ -89,6 +89,8 @@ class PrescriptionUploadResponse(BaseModel):
     estimated_page_count: int | None = None
     scan_status: str
     status: str = "pending_verification"
+    verification_status: str | None = None
+    verification_id: UUID | None = None
 
 
 class IngestionErrorResponse(BaseModel):

@@ -2,7 +2,7 @@ export type PortalKind = "doctor" | "pharmacy" | "admin";
 
 export type SessionUser = {
   id: string;
-  email: string;
+  phone_number: string;
   full_name: string;
   role: string;
   tenant_id: string;

@@ -383,5 +383,7 @@ def _get_qtsp_provider():
     if settings.qtsp_provider == "mock":
         from app.services.qtsp.mock_provider import MockQTSPProvider
         return MockQTSPProvider()
-    # Future: Dokobit, other QTSP providers
+    if settings.qtsp_provider == "dokobit":
+        from app.services.qtsp.dokobit_provider import DokobitQTSPProvider
+        return DokobitQTSPProvider()
     raise ValueError(f"Unknown QTSP provider: {settings.qtsp_provider}")

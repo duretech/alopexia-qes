@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
-"""Insert dev login users into alopexiaqes schema only.
+"""Insert dev phone-login users into alopexiaqes schema only.
 
 Reads DATABASE_URL from .env at repo root (parent of scripts/).
 
 Usage (from repo root):
   python scripts/seed_dev_users.py
 
-Requires: psycopg2-binary
+Requires: psycopg2-binary, cryptography
 """
 
 from __future__ import annotations
 
 import os
 import sys
+import base64
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+from hashlib import sha256
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 # Repo root = parent of scripts/
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -140,13 +144,63 @@ COMMIT;
 """
 
 
+def _encrypt(plaintext: str, key_b64: str) -> str:
+    key = base64.b64decode(key_b64)
+    if len(key) != 32:
+        raise ValueError("FIELD_ENCRYPTION_KEY must decode to 32 bytes")
+    nonce = os.urandom(12)
+    aes = AESGCM(key)
+    ct = aes.encrypt(nonce, plaintext.encode("utf-8"), None)
+    return base64.b64encode(nonce + ct).decode("ascii")
+
+
+def _hash_phone(phone: str) -> str:
+    normalized = "".join(ch for ch in phone if ch.isdigit() or ch == "+")
+    return sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def main() -> None:
     load_dotenv(ENV_PATH)
     dsn = sync_database_url()
+    key_b64 = os.environ.get("FIELD_ENCRYPTION_KEY", "")
+    if not key_b64:
+        print("ERROR: FIELD_ENCRYPTION_KEY required in .env", file=sys.stderr)
+        sys.exit(1)
     conn = connect_psycopg2(dsn)
     try:
         with conn.cursor() as cur:
             cur.execute(SQL)
+            phone_rows = [
+                # phone, pin, portal, user_id, user_type
+                ("+34111111111", "1111", "doctor", "33333333-3333-3333-3333-333333333333", "doctor"),
+                ("+34222222222", "2222", "pharmacy", "44444444-4444-4444-4444-444444444444", "pharmacy_user"),
+                ("+34333333333", "3333", "admin", "55555555-5555-5555-5555-555555555555", "admin_user"),
+            ]
+            for idx, (phone, pin, portal, user_id, user_type) in enumerate(phone_rows, start=1):
+                cur.execute(
+                    """
+                    INSERT INTO alopexiaqes.phone_auth_accounts (
+                      id, tenant_id, user_id, user_type, portal, phone_hash, phone_encrypted, pin_encrypted, is_active
+                    ) VALUES (
+                      %s, '11111111-1111-1111-1111-111111111111', %s, %s, %s, %s, %s, %s, TRUE
+                    )
+                    ON CONFLICT (tenant_id, phone_hash, portal) DO UPDATE SET
+                      user_id = EXCLUDED.user_id,
+                      user_type = EXCLUDED.user_type,
+                      phone_encrypted = EXCLUDED.phone_encrypted,
+                      pin_encrypted = EXCLUDED.pin_encrypted,
+                      is_active = TRUE
+                    """,
+                    (
+                        f"77777777-7777-7777-7777-77777777777{idx}",
+                        user_id,
+                        user_type,
+                        portal,
+                        _hash_phone(phone),
+                        _encrypt(phone, key_b64),
+                        _encrypt(pin, key_b64),
+                    ),
+                )
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -156,10 +210,11 @@ def main() -> None:
         conn.close()
 
     print("OK: Seed applied to schema alopexiaqes only.")
-    print("  doctor@qesflow.local (doctor portal)")
-    print("  pharmacy@qesflow.local (pharmacy portal)")
-    print("  admin@qesflow.local (admin portal)")
-    print("Use any password with AUTH_PROVIDER=mock.")
+    print("Phone login test accounts:")
+    print("  Doctor   +34111111111   PIN: 1111")
+    print("  Pharmacy +34222222222   PIN: 2222")
+    print("  Admin    +34333333333   PIN: 3333")
+    print("OTP is generated per login and stored encrypted in alopexiaqes.phone_otp_challenges.")
 
 
 if __name__ == "__main__":

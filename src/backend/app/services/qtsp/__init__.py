@@ -35,6 +35,9 @@ def __getattr__(name: str):
     if name == "MockQTSPProvider":
         from app.services.qtsp.mock_provider import MockQTSPProvider
         return MockQTSPProvider
+    if name == "DokobitQTSPProvider":
+        from app.services.qtsp.dokobit_provider import DokobitQTSPProvider
+        return DokobitQTSPProvider
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -54,4 +57,5 @@ __all__ = [
     "verify_prescription",
     "VerificationOutcome",
     "MockQTSPProvider",
+    "DokobitQTSPProvider",
 ]

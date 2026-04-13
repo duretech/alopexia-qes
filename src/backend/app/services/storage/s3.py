@@ -53,6 +53,11 @@ class S3StorageBackend:
         region: str = "eu-west-1",
         use_ssl: bool = True,
     ):
+        # When a custom endpoint_url is set we're talking to MinIO (or another
+        # S3-compatible store).  MinIO does not support AES256 SSE without KMS,
+        # so we must skip server-side-encryption headers for non-AWS targets.
+        self._is_minio = endpoint_url is not None
+
         kwargs: dict = {
             "region_name": region,
             "config": BotoConfig(
@@ -93,7 +98,9 @@ class S3StorageBackend:
             "ContentType": content_type,
         }
 
-        if server_side_encryption:
+        # MinIO (custom endpoint) does not support AES256 SSE without KMS.
+        # Skip the header when talking to a non-AWS endpoint.
+        if server_side_encryption and not self._is_minio:
             put_kwargs["ServerSideEncryption"] = "AES256"
 
         if object_lock_days is not None and object_lock_days > 0:

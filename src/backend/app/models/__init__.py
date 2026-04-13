@@ -17,6 +17,7 @@ from app.models.break_glass import BreakGlassEvent
 from app.models.api_credential import ApiCredentialMetadata
 from app.models.session import SessionRecord
 from app.models.mfa_totp import TotpCredential
+from app.models.phone_auth import PhoneAuthAccount, PhoneOtpChallenge
 
 __all__ = [
     "Tenant", "Clinic",
@@ -36,4 +37,6 @@ __all__ = [
     "ApiCredentialMetadata",
     "SessionRecord",
     "TotpCredential",
+    "PhoneAuthAccount",
+    "PhoneOtpChallenge",
 ]

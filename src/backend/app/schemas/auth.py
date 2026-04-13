@@ -1,20 +1,17 @@
-"""Request/response schemas for portal login and MFA."""
+"""Request/response schemas for phone OTP + PIN authentication."""
 
 from __future__ import annotations
 
-from typing import Annotated, Literal, Union
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class LoginRequest(BaseModel):
+class PhoneLoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    # NOTE: We intentionally do NOT use EmailStr here because email-validator
-    # rejects special-use/reserved TLDs like ".local", which we use for dev seeds.
-    email: str = Field(..., min_length=3, max_length=320)
-    password: str = Field(default="", min_length=0, max_length=500)
+    phone_number: str = Field(..., min_length=8, max_length=20)
     portal: Literal["doctor", "pharmacy", "admin"]
 
 
@@ -22,47 +19,42 @@ class AuthUserResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: UUID
-    email: str
+    phone_number: str
     full_name: str
     role: str
     tenant_id: UUID
 
 
-class LoginAuthenticated(BaseModel):
+class AuthenticatedResponse(BaseModel):
     status: Literal["authenticated"] = "authenticated"
     token: str
     user: AuthUserResponse
 
 
-class LoginMfaRequired(BaseModel):
-    status: Literal["mfa_required"] = "mfa_required"
-    mfa_token: str
+class OtpRequiredResponse(BaseModel):
+    status: Literal["otp_required"] = "otp_required"
+    otp_token: str
+    otp_expires_in_seconds: int
+    otp_debug: str | None = None
 
 
-class LoginMfaEnrollment(BaseModel):
-    status: Literal["mfa_enrollment"] = "mfa_enrollment"
-    enrollment_token: str
-    otpauth_uri: str
+class PinRequiredResponse(BaseModel):
+    status: Literal["pin_required"] = "pin_required"
+    pin_token: str
 
 
-LoginResponse = Annotated[
-    Union[LoginAuthenticated, LoginMfaRequired, LoginMfaEnrollment],
-    Field(discriminator="status"),
-]
-
-
-class MfaVerifyRequest(BaseModel):
+class VerifyOtpRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    mfa_token: str
-    code: str = Field(..., min_length=6, max_length=8, pattern=r"^[0-9]+$")
+    otp_token: str
+    otp_code: str = Field(..., min_length=4, max_length=8, pattern=r"^[0-9]+$")
 
 
-class MfaCompleteEnrollmentRequest(BaseModel):
+class VerifyPinRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    enrollment_token: str
-    code: str = Field(..., min_length=6, max_length=8, pattern=r"^[0-9]+$")
+    pin_token: str
+    pin: str = Field(..., min_length=4, max_length=12, pattern=r"^[0-9]+$")
 
 
 class LogoutResponse(BaseModel):

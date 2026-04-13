@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@qes-ui/components/Badge";
+import { Button } from "@qes-ui/components/Button";
 import { Card, CardHeader } from "@qes-ui/components/Card";
 import { EmptyState } from "@qes-ui/components/EmptyState";
 import { Spinner } from "@qes-ui/components/Spinner";
@@ -11,13 +13,14 @@ interface Prescription {
   id: string;
   status: string;
   verification_status: string | null;
+  dispensing_status: string | null;
   upload_checksum: string;
   created_at: string | null;
 }
 
 function statusTone(status: string): "success" | "warning" | "danger" | "neutral" {
   if (status === "verified" || status === "available") return "success";
-  if (status === "failed_verification" || status === "revoked") return "danger";
+  if (status === "failed_verification" || status === "revoked" || status === "cancelled") return "danger";
   if (status === "pending_verification" || status === "manual_review") return "warning";
   return "neutral";
 }
@@ -44,9 +47,7 @@ export default function PrescriptionsPage() {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
@@ -61,7 +62,15 @@ export default function PrescriptionsPage() {
 
   return (
     <Card padding="lg">
-      <CardHeader title="My prescriptions" description="Prescriptions you uploaded for this tenant." />
+      <CardHeader
+        title="My prescriptions"
+        description="Prescriptions you uploaded for this tenant."
+        action={
+          <Link href="/">
+            <Button variant="primary">Upload new</Button>
+          </Link>
+        }
+      />
       {error && (
         <div className="qes-alert qes-alert--error" role="alert" style={{ marginBottom: "1rem" }}>
           {error}
@@ -80,7 +89,9 @@ export default function PrescriptionsPage() {
                 <th>ID</th>
                 <th>Status</th>
                 <th>Verification</th>
+                <th>Dispensing</th>
                 <th>Created</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -91,7 +102,15 @@ export default function PrescriptionsPage() {
                     <Badge tone={statusTone(rx.status)}>{rx.status.replace(/_/g, " ")}</Badge>
                   </td>
                   <td>{rx.verification_status ?? "—"}</td>
+                  <td>{rx.dispensing_status ?? "—"}</td>
                   <td>{rx.created_at ? new Date(rx.created_at).toLocaleDateString("es-ES") : "—"}</td>
+                  <td>
+                    <Link href={`/prescriptions/${rx.id}`}>
+                      <Button variant="ghost" style={{ padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}>
+                        View
+                      </Button>
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

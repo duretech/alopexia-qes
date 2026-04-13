@@ -56,6 +56,48 @@ def issue_mfa_challenge_token(
     return jwt.encode(payload, _secret(), algorithm="HS256")
 
 
+def issue_pin_challenge_token(
+    *,
+    account_id: str,
+    user_id: str,
+    tenant_id: str,
+    user_type: str,
+    ttl_seconds: int = 600,
+) -> str:
+    now = int(time.time())
+    payload: dict[str, Any] = {
+        "typ": "pin_challenge",
+        "aid": account_id,
+        "sub": user_id,
+        "tid": tenant_id,
+        "ut": user_type,
+        "iat": now,
+        "exp": now + ttl_seconds,
+    }
+    return jwt.encode(payload, _secret(), algorithm="HS256")
+
+
+def issue_otp_challenge_token(
+    *,
+    challenge_id: str,
+    account_id: str,
+    tenant_id: str,
+    portal: str,
+    ttl_seconds: int = 600,
+) -> str:
+    now = int(time.time())
+    payload: dict[str, Any] = {
+        "typ": "otp_challenge",
+        "cid": challenge_id,
+        "aid": account_id,
+        "tid": tenant_id,
+        "portal": portal,
+        "iat": now,
+        "exp": now + ttl_seconds,
+    }
+    return jwt.encode(payload, _secret(), algorithm="HS256")
+
+
 def decode_pending_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, _secret(), algorithms=["HS256"])
 

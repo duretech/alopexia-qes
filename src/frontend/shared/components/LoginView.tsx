@@ -2,16 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import QRCode from "react-qr-code";
 import type { PortalKind } from "../lib/session";
 import { setSession, type SessionUser } from "../lib/session";
 import { Button } from "./Button";
 import { TextField } from "./TextField";
 
 type LoginState =
-  | { step: "credentials" }
-  | { step: "mfa"; mfa_token: string }
-  | { step: "enroll"; enrollment_token: string; otpauth_uri: string };
+  | { step: "phone" }
+  | { step: "otp"; otp_token: string }
+  | { step: "pin"; pin_token: string };
 
 export function LoginView({
   portal,
@@ -23,14 +22,13 @@ export function LoginView({
   heroSubtitle: string;
 }) {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
-  const [state, setState] = useState<LoginState>({ step: "credentials" });
+  const [state, setState] = useState<LoginState>({ step: "phone" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submitCredentials(e: React.FormEvent) {
+  async function submitPhone(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -38,27 +36,18 @@ export function LoginView({
       const res = await fetch("/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, portal }),
+        body: JSON.stringify({ phone_number: phoneNumber, portal }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(typeof data.detail === "string" ? data.detail : "Login failed");
         return;
       }
-      if (data.status === "authenticated") {
-        persistAndGo(data.token, data.user);
-        return;
-      }
-      if (data.status === "mfa_required") {
-        setState({ step: "mfa", mfa_token: data.mfa_token });
-        return;
-      }
-      if (data.status === "mfa_enrollment") {
-        setState({
-          step: "enroll",
-          enrollment_token: data.enrollment_token,
-          otpauth_uri: data.otpauth_uri,
-        });
+      if (data.status === "otp_required") {
+        setState({ step: "otp", otp_token: data.otp_token });
+        if (data.otp_debug) {
+          setError(`Test OTP: ${data.otp_debug}`);
+        }
         return;
       }
       setError("Unexpected response");
@@ -69,17 +58,17 @@ export function LoginView({
     }
   }
 
-  async function submitMfa(e: React.FormEvent) {
+  async function submitOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/auth/mfa/verify", {
+      const res = await fetch("/api/v1/auth/otp/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mfa_token: state.step === "mfa" ? state.mfa_token : "",
-          code: code.replace(/\s/g, ""),
+          otp_token: state.step === "otp" ? state.otp_token : "",
+          otp_code: code.replace(/\s/g, ""),
         }),
       });
       const data = await res.json();
@@ -87,7 +76,12 @@ export function LoginView({
         setError(typeof data.detail === "string" ? data.detail : "Verification failed");
         return;
       }
-      persistAndGo(data.token, data.user);
+      if (data.status === "pin_required") {
+        setState({ step: "pin", pin_token: data.pin_token });
+        setCode("");
+        return;
+      }
+      setError("Unexpected response");
     } catch {
       setError("Network error");
     } finally {
@@ -95,22 +89,22 @@ export function LoginView({
     }
   }
 
-  async function submitEnroll(e: React.FormEvent) {
+  async function submitPin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/auth/mfa/complete-enrollment", {
+      const res = await fetch("/api/v1/auth/pin/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          enrollment_token: state.step === "enroll" ? state.enrollment_token : "",
-          code: code.replace(/\s/g, ""),
+          pin_token: state.step === "pin" ? state.pin_token : "",
+          pin: code.replace(/\s/g, ""),
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(typeof data.detail === "string" ? data.detail : "Enrollment failed");
+        setError(typeof data.detail === "string" ? data.detail : "PIN verification failed");
         return;
       }
       persistAndGo(data.token, data.user);
@@ -124,7 +118,7 @@ export function LoginView({
   function persistAndGo(token: string, user: Record<string, unknown>) {
     const normalized: SessionUser = {
       id: String(user.id),
-      email: String(user.email),
+      phone_number: String(user.phone_number),
       full_name: String(user.full_name ?? ""),
       role: String(user.role),
       tenant_id: String(user.tenant_id),
@@ -142,27 +136,19 @@ export function LoginView({
       </div>
       <div className="qes-login-panel">
         <div className="qes-login-card">
-          {state.step === "credentials" && (
+          {state.step === "phone" && (
             <>
-              <h2>Sign in</h2>
-              <p className="qes-login-card__sub">Use your work email. Multi-factor authentication is required.</p>
-              <form onSubmit={submitCredentials} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h2>Sign in with phone</h2>
+              <p className="qes-login-card__sub">Enter your phone number to receive a one-time OTP.</p>
+              <form onSubmit={submitPhone} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <TextField
-                  label="Email"
-                  type="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  label="Phone number"
+                  type="tel"
+                  autoComplete="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
                   required
-                  placeholder="you@organization.com"
-                />
-                <TextField
-                  label="Password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  hint="Mock mode: any password is accepted."
+                  placeholder="+34XXXXXXXXX"
                 />
                 {error && (
                   <div className="qes-alert qes-alert--error" role="alert">
@@ -170,19 +156,19 @@ export function LoginView({
                   </div>
                 )}
                 <Button variant="primary" type="submit" disabled={loading} style={{ width: "100%" }}>
-                  {loading ? "Signing in…" : "Continue"}
+                  {loading ? "Sending OTP…" : "Continue"}
                 </Button>
               </form>
             </>
           )}
 
-          {state.step === "mfa" && (
+          {state.step === "otp" && (
             <>
-              <h2>Authenticator code</h2>
-              <p className="qes-login-card__sub">Enter the 6-digit code from your authenticator app.</p>
-              <form onSubmit={submitMfa} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h2>Enter OTP</h2>
+              <p className="qes-login-card__sub">Enter the code sent to your phone.</p>
+              <form onSubmit={submitOtp} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <TextField
-                  label="One-time code"
+                  label="OTP code"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                   pattern="[0-9]*"
@@ -202,7 +188,7 @@ export function LoginView({
                     type="button"
                     variant="secondary"
                     onClick={() => {
-                      setState({ step: "credentials" });
+                      setState({ step: "phone" });
                       setCode("");
                       setError(null);
                     }}
@@ -210,30 +196,25 @@ export function LoginView({
                     Back
                   </Button>
                   <Button variant="primary" type="submit" disabled={loading} style={{ flex: 1 }}>
-                    {loading ? "Verifying…" : "Verify"}
+                    {loading ? "Verifying OTP…" : "Verify OTP"}
                   </Button>
                 </div>
               </form>
             </>
           )}
 
-          {state.step === "enroll" && (
+          {state.step === "pin" && (
             <>
-              <h2>Set up authenticator</h2>
-              <p className="qes-login-card__sub">
-                Scan the QR code with Google Authenticator, 1Password, or another TOTP app, then enter the code to
-                finish enrollment.
-              </p>
-              <div className="qes-qr">
-                <QRCode value={state.otpauth_uri} size={180} style={{ height: "auto", maxWidth: "100%" }} />
-              </div>
-              <form onSubmit={submitEnroll} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <h2>Multi-factor PIN</h2>
+              <p className="qes-login-card__sub">Enter your secure PIN to complete MFA.</p>
+              <form onSubmit={submitPin} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <TextField
-                  label="Confirm code"
+                  label="PIN"
+                  type="password"
                   inputMode="numeric"
-                  autoComplete="one-time-code"
+                  autoComplete="off"
                   pattern="[0-9]*"
-                  maxLength={8}
+                  maxLength={12}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   required
@@ -248,7 +229,7 @@ export function LoginView({
                     type="button"
                     variant="secondary"
                     onClick={() => {
-                      setState({ step: "credentials" });
+                      setState({ step: "phone" });
                       setCode("");
                       setError(null);
                     }}
@@ -256,7 +237,7 @@ export function LoginView({
                     Back
                   </Button>
                   <Button variant="primary" type="submit" disabled={loading} style={{ flex: 1 }}>
-                    {loading ? "Saving…" : "Complete setup"}
+                    {loading ? "Verifying PIN…" : "Verify PIN"}
                   </Button>
                 </div>
               </form>

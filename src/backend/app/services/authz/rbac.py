@@ -137,6 +137,8 @@ _ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         Permission.VERIFICATION_MANUAL_REVIEW,
         Permission.EVIDENCE_VIEW,
         Permission.EVIDENCE_EXPORT,
+        Permission.USER_VIEW_TENANT,
+        Permission.USER_SUSPEND,
         Permission.AUDIT_VIEW_TENANT,
         Permission.AUDIT_EXPORT,
         Permission.AUDIT_VERIFY_INTEGRITY,
@@ -146,6 +148,7 @@ _ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
         Permission.RETENTION_MANAGE_LEGAL_HOLD,
         Permission.INCIDENT_VIEW,
         Permission.INCIDENT_MANAGE,
+        Permission.SYSTEM_VIEW_HEALTH,
     }),
 
     Role.PLATFORM_ADMIN: frozenset({

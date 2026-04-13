@@ -77,6 +77,15 @@ class Settings(BaseSettings):
     # Encryption
     field_encryption_key: str = Field(default="", alias="FIELD_ENCRYPTION_KEY")
 
+    # SMS OTP (GatewayAPI)
+    sms_gateway_url: str = Field(default="https://gatewayapi.eu/rest/mtsms", alias="SMS_GATEWAY_URL")
+    sms_gateway_token: str = Field(
+        default="KRty0APgRcCAfTUdQ38kEm7qpq4qcnRrJsVDCU8spujcnztSBghsBhmZToNpwoKD",
+        alias="SMS_GATEWAY_TOKEN",
+    )
+    sms_sender_name: str = Field(default="QESFlow", alias="SMS_SENDER_NAME")
+    sms_otp_ttl_seconds: int = Field(default=300, alias="SMS_OTP_TTL_SECONDS")
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.app_cors_origins.split(",")]
