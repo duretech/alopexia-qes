@@ -60,7 +60,7 @@
 .qes-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.95rem;
   width: 100%;
 }
 .qes-label {
@@ -79,6 +79,10 @@
   background: var(--neutral-0);
   color: var(--neutral-900);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.details-custom .qes-input {
+  width: 80%;
 }
 .qes-input:hover,
 .qes-textarea:hover {

@@ -31,9 +31,7 @@ interface FileValidation {
 
 export default function UploadPage() {
   const [files, setFiles] = useState<PrescriptionItem[]>([]);
-  const [currentPrescription, setCurrentPrescription] = useState<Partial<PrescriptionItem>>({});
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
@@ -127,10 +125,10 @@ export default function UploadPage() {
     setFiles(prev => prev.filter((_, i) => i !== index));
   }
 
-  function openReviewModal(index: number) {
-    setReviewIndex(index);
-    setCurrentPrescription({ ...files[index] });
-    setShowReviewModal(true);
+  function updatePrescription(index: number, updates: Partial<PrescriptionItem>) {
+    const updated = [...files];
+    updated[index] = { ...updated[index], ...updates };
+    setFiles(updated);
   }
 
   function openPreview(index: number) {
@@ -146,15 +144,6 @@ export default function UploadPage() {
     }
     setPreviewIndex(null);
     setPdfUrl("");
-  }
-
-  function saveReviewModal() {
-    if (reviewIndex === null) return;
-    const updated = [...files];
-    updated[reviewIndex] = { ...updated[reviewIndex], ...currentPrescription };
-    setFiles(updated);
-    setShowReviewModal(false);
-    setCurrentPrescription({});
   }
 
   async function uploadAll() {
@@ -312,7 +301,7 @@ export default function UploadPage() {
       <Card padding="lg">
         <CardHeader
           title="Upload Signed Prescriptions"
-          description="Digitally signed PDFs with QTSP verification. Supports batch uploads and previews."
+          description="Digitally signed PDFs with QTSP verification. Supports batch uploads."
           action={
             <a href="/prescription-template.pdf" download style={{ fontSize: "0.875rem", color: "var(--color-primary-600)", textDecoration: "none", fontWeight: 500 }}>
               📋 Download template
@@ -369,7 +358,7 @@ export default function UploadPage() {
           )}
         </div>
 
-        {/* Step 2: File Queue */}
+        {/* Step 2: File Queue with Inline Details */}
         {files.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", paddingBottom: "1.75rem", borderBottom: "1px solid var(--color-neutral-200)" }}>
             <div>
@@ -377,60 +366,156 @@ export default function UploadPage() {
                 Step 2: Review Prescriptions ({completedCount}/{files.length} completed)
               </h3>
               <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--color-neutral-500)" }}>
-                Click to preview, edit, or remove. Add patient details before uploading.
+                Click to preview, add details, or remove. All fields with * are required.
               </p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {files.map((item, idx) => (
                 <div key={idx} style={{
-                  padding: "1rem 1.25rem",
                   border: "1px solid var(--color-neutral-200)",
                   borderRadius: "var(--radius-md)",
                   background: item.status === "success" ? "var(--color-success-50)" : "var(--color-neutral-50)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  overflow: "hidden",
                 }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 500, color: "var(--color-neutral-900)" }}>
-                      {item.file.name}
-                    </div>
-                    <div style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)", marginTop: "0.25rem" }}>
-                      {(item.file.size / 1024 / 1024).toFixed(2)} MB • {item.patientId ? `✓ Patient: ${item.patientId.substring(0, 8)}...` : "⚠️ Patient: required"} • {item.medicationName || "—"}
-                    </div>
-                    {item.status === "success" && item.result && (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--color-success-600)", marginTop: "0.25rem" }}>
-                        ✓ {item.result.verification_status} • ID: {item.result.prescription_id}
+                  {/* File Header */}
+                  <div style={{
+                    padding: "1rem 1.25rem",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 500, color: "var(--color-neutral-900)" }}>
+                        {item.file.name}
                       </div>
-                    )}
-                    {item.status === "error" && (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--color-danger-600)", marginTop: "0.25rem" }}>
-                        ✗ {item.error}
+                      <div style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)", marginTop: "0.25rem" }}>
+                        {(item.file.size / 1024 / 1024).toFixed(2)} MB • {item.patientId ? `✓ Patient: ${item.patientId.substring(0, 8)}...` : "⚠️ Patient: required"} • {item.medicationName || "—"}
                       </div>
-                    )}
+                      {item.status === "success" && item.result && (
+                        <div style={{ fontSize: "0.8125rem", color: "var(--color-success-600)", marginTop: "0.25rem" }}>
+                          ✓ {item.result.verification_status} • ID: {item.result.prescription_id}
+                        </div>
+                      )}
+                      {item.status === "error" && (
+                        <div style={{ fontSize: "0.8125rem", color: "var(--color-danger-600)", marginTop: "0.25rem" }}>
+                          ✗ {item.error}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+                      {item.status === "uploading" && <Badge tone="warning">⏳ Uploading</Badge>}
+                      {item.status === "success" && <Badge tone="success">✓ Done</Badge>}
+                      {item.status === "error" && <Badge tone="danger">✗ Failed</Badge>}
+
+                      <Button variant="secondary" onClick={() => openPreview(idx)} style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}>
+                        👁️ Preview
+                      </Button>
+
+                      {(item.status === "pending" || !item.patientId) && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
+                            style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}
+                          >
+                            {!item.patientId ? "Add details" : "Edit"}
+                          </Button>
+                          <Button variant="ghost" onClick={() => removePrescription(idx)} style={{ padding: "0.5rem 0.5rem", fontSize: "0.8125rem", color: "var(--color-danger-600)" }}>
+                            ✕
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                    {item.status === "uploading" && <Badge tone="warning">⏳ Uploading</Badge>}
-                    {item.status === "success" && <Badge tone="success">✓ Done</Badge>}
-                    {item.status === "error" && <Badge tone="danger">✗ Failed</Badge>}
+                  {/* Inline Details Form */}
+                  {expandedIndex === idx && (
+                    <div style={{
+                      padding: "1.25rem",
+                      background: "var(--color-neutral-100)",
+                      borderTop: "1px solid var(--color-neutral-200)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "1rem",
+                    }}>
+                      <div>
+                        <h4 style={{ margin: "0 0 1rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
+                          Prescription Details
+                        </h4>
+                      </div>
 
-                    <Button variant="secondary" onClick={() => openPreview(idx)} style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}>
-                      👁️ Preview
-                    </Button>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="details-custom">
+                        <TextField
+                          label="Clinic ID (UUID) *"
+                          value={item.patientId}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { patientId: e.target.value })}
+                          // placeholder="e.g., 66666666-6666-6666-6666-666666666666"
+                          hint="Unique clinic identifier"
+                          required
+                        />
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                          <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--color-neutral-900)", display: "block", marginBottom: "0.25rem" }}>
+                            Idempotency Key
+                          </label>
+                          <div style={{
+                            padding: "0.75rem 1rem",
+                            background: "var(--color-neutral-50)",
+                            border: "1px solid var(--color-neutral-200)",
+                            borderRadius: "var(--radius-md)",
+                            fontSize: "0.875rem",
+                            color: "var(--color-neutral-600)",
+                            fontFamily: "monospace",
+                            wordBreak: "break-all",
+                            minHeight: "2.5rem",
+                            display: "flex",
+                            alignItems: "center",
+                          }}>
+                            {item.idempotencyKey.substring(0, 8)}...{item.idempotencyKey.substring(item.idempotencyKey.length - 8)}
+                          </div>
+                          <span style={{ fontSize: "0.75rem", color: "var(--color-neutral-500)", display: "block", marginTop: "0.25rem" }}>
+                            Auto-generated for deduplication
+                          </span>
+                        </div>
+                        {/* <TextField
+                          label="Medication Name"
+                          value={item.medicationName}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { medicationName: e.target.value })}
+                          placeholder="e.g., Amoxicillin 500mg"
+                        /> */}
+                      </div>
 
-                    {(item.status === "pending" || !item.patientId) && (
-                      <>
-                        <Button variant="secondary" onClick={() => openReviewModal(idx)} style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}>
-                          {!item.patientId ? "Add details" : "Edit"}
+                      {/* <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                        <TextField
+                          label="Dosage/Instructions"
+                          value={item.dosage}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { dosage: e.target.value })}
+                          placeholder="e.g., 1 tablet × 3 daily"
+                        />
+                        <TextField
+                          label="Idempotency Key"
+                          value={item.idempotencyKey}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { idempotencyKey: e.target.value })}
+                          hint="Auto-generated for deduplication"
+                          disabled
+                        />
+                      </div> */}
+
+                      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "0.5rem" }}>
+                        <Button variant="ghost" onClick={() => setExpandedIndex(null)}>
+                          Cancel
                         </Button>
-                        <Button variant="ghost" onClick={() => removePrescription(idx)} style={{ padding: "0.5rem 0.5rem", fontSize: "0.8125rem", color: "var(--color-danger-600)" }}>
-                          ✕
+                        <Button
+                          variant="primary"
+                          onClick={() => setExpandedIndex(null)}
+                          disabled={!item.patientId}
+                        >
+                          Save Details
                         </Button>
-                      </>
-                    )}
-                  </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -468,7 +553,7 @@ export default function UploadPage() {
               <strong style={{ color: "var(--color-neutral-900)" }}>Processing steps:</strong>
               <ol style={{ margin: "0.5rem 0 0", paddingLeft: "1.5rem" }}>
                 <li>🔍 ClamAV malware scan</li>
-                <li>✍️ Digital signature verification (QTSP/Dokobit)</li>
+                <li>✍️ Digital signature verification (QTSP)</li>
                 <li>📜 Certificate chain validation</li>
                 <li>🔐 Secure storage with tenant isolation</li>
                 <li>📧 Pharmacy notification</li>
@@ -485,48 +570,6 @@ export default function UploadPage() {
           </div>
         )}
       </Card>
-
-      {/* Review Modal */}
-      {showReviewModal && reviewIndex !== null && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }} onClick={() => setShowReviewModal(false)}>
-          <div style={{
-            width: "90%",
-            maxWidth: "500px",
-            maxHeight: "90vh",
-            overflow: "auto",
-          }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
-            <Card padding="lg">
-            <CardHeader title={`Review: ${files[reviewIndex].file.name}`} />
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ padding: "1rem", background: "var(--color-neutral-50)", borderRadius: "var(--radius-md)", fontSize: "0.875rem" }}>
-                <strong>File Details:</strong>
-                <div style={{ marginTop: "0.5rem", color: "var(--color-neutral-600)" }}>
-                  Size: {(files[reviewIndex].file.size / 1024 / 1024).toFixed(2)} MB
-                  <br />
-                  Modified: {new Date(files[reviewIndex].file.lastModified).toLocaleString()}
-                </div>
-              </div>
-              <TextField label="Patient ID (UUID)" value={currentPrescription.patientId || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPrescription({ ...currentPrescription, patientId: e.target.value })} placeholder="e.g., 66666666-6666-6666-6666-666666666666" required />
-              <TextField label="Medication Name" value={currentPrescription.medicationName || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPrescription({ ...currentPrescription, medicationName: e.target.value })} placeholder="e.g., Amoxicillin 500mg" />
-              <TextField label="Dosage/Instructions" value={currentPrescription.dosage || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPrescription({ ...currentPrescription, dosage: e.target.value })} placeholder="e.g., 1 tablet × 3 daily" />
-              <TextField label="Idempotency Key" value={currentPrescription.idempotencyKey || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPrescription({ ...currentPrescription, idempotencyKey: e.target.value })} hint="Auto-generated for deduplication" disabled />
-              <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "1rem", borderTop: "1px solid var(--color-neutral-200)" }}>
-                <Button variant="ghost" onClick={() => setShowReviewModal(false)}>Cancel</Button>
-                <Button variant="primary" onClick={saveReviewModal} disabled={!currentPrescription.patientId}>Save Details</Button>
-              </div>
-            </div>
-            </Card>
-          </div>
-        </div>
-      )}
 
       {/* PDF Preview Modal */}
       {previewIndex !== null && pdfUrl && (
@@ -553,7 +596,7 @@ export default function UploadPage() {
               <div>
                 <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>📄 PDF Preview</h2>
                 <p style={{ margin: "0.25rem 0 0", fontSize: "0.875rem", color: "var(--color-neutral-500)" }}>
-                  {files[previewIndex].file.name}
+                  {previewIndex !== null ? files[previewIndex].file.name : ""}
                 </p>
               </div>
               <Button variant="ghost" onClick={closePreview} style={{ padding: "0.5rem 0.5rem" }}>✕</Button>
