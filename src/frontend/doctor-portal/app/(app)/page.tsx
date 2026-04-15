@@ -390,7 +390,7 @@ export default function UploadPage() {
                         {item.file.name}
                       </div>
                       <div style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)", marginTop: "0.25rem" }}>
-                        {(item.file.size / 1024 / 1024).toFixed(2)} MB • {item.patientId ? `✓ Patient: ${item.patientId.substring(0, 8)}...` : "⚠️ Patient: required"} • {item.medicationName || "—"}
+                        {(item.file.size / 1024 / 1024).toFixed(2)} MB • {item.patientId ? `✓ Clinic: ${item.patientId.substring(0, 8)}...` : "⚠️ Clinic: required"} • {item.medicationName || "—"}
                       </div>
                       {item.status === "success" && item.result && (
                         <div style={{ fontSize: "0.8125rem", color: "var(--color-success-600)", marginTop: "0.25rem" }}>

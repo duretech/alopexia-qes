@@ -68,7 +68,7 @@ export default function AdminDashboard() {
               {loading && label !== "API" ? (
                 <Spinner label="" />
               ) : (
-                <div style={{ fontSize: "1.5rem", fontWeight: 700, color: tone === "danger" ? "var(--color-danger-600)" : tone === "warning" ? "var(--color-warning-600)" : "var(--color-neutral-900)" }}>
+                <div style={{ fontSize: "1.5rem", fontWeight: 700, color: tone === "danger" ? "var(--color-danger-600)" : tone === "success" ? "var(--color-success-600)" : "var(--color-neutral-900)" }}>
                   {value}
                 </div>
               )}

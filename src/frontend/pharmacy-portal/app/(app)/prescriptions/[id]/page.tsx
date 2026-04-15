@@ -223,7 +223,7 @@ export default function PharmacyPrescriptionDetailPage() {
           </div>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <Badge tone={statusTone(rx.status)}>{rx.status.replace(/_/g, " ")}</Badge>
-            <Button variant="secondary" onClick={handleDownload}>Download PDF</Button>
+            {/* <Button variant="secondary" onClick={handleDownload}>Download PDF</Button> */}
             {canDispense && (
               <Button variant="primary" onClick={() => setDispenseOpen(true)}>Confirm dispensing</Button>
             )}
@@ -236,7 +236,7 @@ export default function PharmacyPrescriptionDetailPage() {
         <Card padding="lg">
           <CardHeader title="Prescription details" />
           <dl className="qes-dl">
-            <dt>Patient ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
+            <dt>Clinic ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
             <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd>
             <dt>Prescribed</dt><dd>{rx.prescribed_date ? new Date(rx.prescribed_date).toLocaleDateString("es-ES") : "—"}</dd>
             <dt>Created</dt><dd>{rx.created_at ? new Date(rx.created_at).toLocaleString("es-ES") : "—"}</dd>

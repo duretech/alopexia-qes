@@ -136,6 +136,7 @@ export function LoginView({
       </div>
       <div className="qes-login-panel">
         <div className="qes-login-card">
+          <img src="/logo.png" alt="Centa Bio Lab" style={{ height: "48px", width: "auto", marginBottom: "1rem" }} />
           {state.step === "phone" && (
             <>
               <h2>Sign in with phone</h2>

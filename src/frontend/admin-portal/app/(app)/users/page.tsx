@@ -106,7 +106,7 @@ export default function UsersPage() {
         <div style={{ display: "flex", gap: "1rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
           <div className="qes-field" style={{ margin: 0, minWidth: "160px" }}>
             <label className="qes-label">User type</label>
-            <select className="qes-input" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <select className="qes-input" value={filterType} onChange={(e: any) => setFilterType(e.target.value)}>
               <option value="">All types</option>
               <option value="doctor">Doctors</option>
               <option value="pharmacy_user">Pharmacy users</option>
@@ -115,7 +115,7 @@ export default function UsersPage() {
           </div>
           <div className="qes-field" style={{ margin: 0, minWidth: "140px" }}>
             <label className="qes-label">Status</label>
-            <select className="qes-input" value={filterActive} onChange={(e) => setFilterActive(e.target.value)}>
+            <select className="qes-input" value={filterActive} onChange={(e: any) => setFilterActive(e.target.value)}>
               <option value="">All</option>
               <option value="true">Active</option>
               <option value="false">Suspended</option>
@@ -155,12 +155,12 @@ export default function UsersPage() {
                     <td style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)" }}>
                       {u.role ?? u.license_number ?? u.pharmacy_name ?? "—"}
                     </td>
-                    <td>
+                    <td style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
                       <Badge tone={u.is_active ? "success" : "danger"}>
                         {u.is_active ? "Active" : "Suspended"}
                       </Badge>
                       {u.locked_until && new Date(u.locked_until) > new Date() && (
-                        <Badge tone="warning" style={{ marginLeft: "0.25rem" }}>Locked</Badge>
+                        <Badge tone="warning">Locked</Badge>
                       )}
                     </td>
                     <td><Badge tone={u.mfa_enabled ? "success" : "neutral"}>{u.mfa_enabled ? "Enabled" : "Disabled"}</Badge></td>

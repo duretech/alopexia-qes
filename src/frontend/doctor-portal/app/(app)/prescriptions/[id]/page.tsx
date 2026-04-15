@@ -210,7 +210,7 @@ export default function PrescriptionDetailPage() {
         <Card padding="lg">
           <CardHeader title="Prescription details" />
           <dl className="qes-dl">
-            <dt>Patient ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
+            <dt>Clinic ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
             <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd>
             <dt>Prescribed date</dt><dd>{rx.prescribed_date ? new Date(rx.prescribed_date).toLocaleDateString("es-ES") : "—"}</dd>
             <dt>Created</dt><dd>{rx.created_at ? new Date(rx.created_at).toLocaleString("es-ES") : "—"}</dd>
@@ -300,10 +300,10 @@ export default function PrescriptionDetailPage() {
             {/* Certificate */}
             {rx.verification.certificate && (
               <div style={{ gridColumn: "1 / -1", padding: "1rem", background: "var(--color-neutral-50)", borderRadius: "var(--radius-md)", border: "1px solid var(--color-neutral-200)" }}>
-                <div style={{ fontSize: "0.75rem", color: "var(--color-neutral-500)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--color-neutral-500)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   Signing certificate
                   {rx.verification.certificate.is_qualified && (
-                    <Badge tone="success" style={{ marginLeft: "0.5rem" }}>Qualified eIDAS</Badge>
+                    <Badge tone="success">Qualified eIDAS</Badge>
                   )}
                 </div>
                 <dl className="qes-dl" style={{ gridTemplateColumns: "repeat(3, max-content 1fr)", columnGap: "2rem" }}>
@@ -327,7 +327,7 @@ export default function PrescriptionDetailPage() {
                     <Badge tone={rx.verification.timestamp.status === "qualified" || rx.verification.timestamp.status === "valid" ? "success" : rx.verification.timestamp.status === "invalid" ? "danger" : "neutral"}>
                       {rx.verification.timestamp.status ?? "missing"}
                     </Badge>
-                    {rx.verification.timestamp.is_qualified && <Badge tone="success" style={{ marginLeft: "0.5rem" }}>Qualified</Badge>}
+                    {rx.verification.timestamp.is_qualified && <span style={{ marginLeft: "0.5rem" }}><Badge tone="success">Qualified</Badge></span>}
                   </dd>
                   <dt>Time</dt><dd>{rx.verification.timestamp.time ? new Date(rx.verification.timestamp.time).toLocaleString("es-ES") : "—"}</dd>
                   <dt>Authority</dt><dd>{rx.verification.timestamp.authority ?? "—"}</dd>
@@ -399,7 +399,7 @@ export default function PrescriptionDetailPage() {
         <TextField
           label="Reason"
           value={cancelReason}
-          onChange={(e) => setCancelReason(e.target.value)}
+          onChange={(e: any) => setCancelReason(e.target.value)}
           placeholder="Mandatory — explain why this prescription is being cancelled"
           required
         />

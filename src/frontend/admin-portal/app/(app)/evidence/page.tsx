@@ -27,8 +27,6 @@ export default function EvidencePage() {
   const [error, setError] = useState<string | null>(null);
   const [filterPrescription, setFilterPrescription] = useState("");
   const [filterType, setFilterType] = useState("");
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -50,23 +48,6 @@ export default function EvidencePage() {
 
   useEffect(() => { load(); }, [filterPrescription, filterType]);
 
-  async function handleDownload(id: string) {
-    setDownloadingId(id);
-    setDownloadError(null);
-    try {
-      const res = await apiFetch("admin", `/api/v1/admin/evidence/${id}/download`);
-      if (res.ok) {
-        const data = await res.json();
-        window.open(data.signed_url, "_blank", "noopener,noreferrer");
-      } else {
-        setDownloadError("Failed to generate download URL.");
-      }
-    } catch {
-      setDownloadError("Network error.");
-    } finally {
-      setDownloadingId(null);
-    }
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -81,13 +62,13 @@ export default function EvidencePage() {
           <TextField
             label="Filter by prescription ID"
             value={filterPrescription}
-            onChange={(e) => setFilterPrescription(e.target.value)}
+            onChange={(e: any) => setFilterPrescription(e.target.value)}
             placeholder="UUID"
             hint="Leave empty to show all"
           />
           <div className="qes-field" style={{ margin: 0, minWidth: "180px" }}>
             <label className="qes-label">Evidence type</label>
-            <select className="qes-input" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <select className="qes-input" value={filterType} onChange={(e: any) => setFilterType(e.target.value)}>
               <option value="">All types</option>
               <option value="validation_report">Validation report</option>
               <option value="diagnostic_data">Diagnostic data</option>
@@ -99,7 +80,6 @@ export default function EvidencePage() {
         </div>
 
         {error && <div className="qes-alert qes-alert--error" style={{ marginBottom: "1rem" }}>{error}</div>}
-        {downloadError && <div className="qes-alert qes-alert--error" style={{ marginBottom: "1rem" }}>{downloadError}</div>}
 
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}><Spinner label="Loading evidence…" /></div>
@@ -137,11 +117,10 @@ export default function EvidencePage() {
                     <td>
                       <Button
                         variant="secondary"
-                        onClick={() => handleDownload(f.id)}
-                        disabled={downloadingId === f.id}
-                        style={{ padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
+                        disabled
+                        style={{ padding: "0.25rem 0.75rem", fontSize: "0.8125rem", opacity: 0.4, cursor: "not-allowed" }}
                       >
-                        {downloadingId === f.id ? "…" : "Download"}
+                        Download
                       </Button>
                     </td>
                   </tr>
