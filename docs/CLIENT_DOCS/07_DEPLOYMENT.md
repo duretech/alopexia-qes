@@ -37,7 +37,7 @@ Stage 1: Build Backend
 ├─ Install Python packages
 └─ Compile/optimize code
 
-Stage 2: Build Frontend (Doctor Portal)
+Stage 2: Build Frontend (Clinic Portal)
 ├─ Base: node:18-alpine
 ├─ Install npm dependencies
 ├─ Build React app
@@ -96,7 +96,7 @@ Services:
 │  ├─ Port: 8000
 │  └─ No HTTPS (localhost testing)
 │
-├─ doctor-portal (React)
+├─ clinic-portal (React)
 │  ├─ Port: 3000
 │  ├─ Environment: development
 │  └─ Hot reload: enabled
@@ -216,8 +216,8 @@ docker build -t myacr.azurecr.io/qes-api:latest -f Dockerfile.api .
 docker push myacr.azurecr.io/qes-api:latest
 
 # Build and push frontend images
-docker build -t myacr.azurecr.io/qes-doctor-portal:latest -f Dockerfile.doctor-portal .
-docker push myacr.azurecr.io/qes-doctor-portal:latest
+docker build -t myacr.azurecr.io/qes-clinic-portal:latest -f Dockerfile.clinic-portal .
+docker push myacr.azurecr.io/qes-clinic-portal:latest
 
 docker build -t myacr.azurecr.io/qes-pharmacy-portal:latest -f Dockerfile.pharmacy-portal .
 docker push myacr.azurecr.io/qes-pharmacy-portal:latest
@@ -256,7 +256,7 @@ Function: Load balancing and HTTPS termination
 Configuration:
 ├─ Frontend IP: Public IP with DDoS protection
 ├─ Backend Pool:
-│  ├─ Doctor Portal container (3000)
+│  ├─ Clinic Portal container (3000)
 │  ├─ Pharmacy Portal container (3001)
 │  ├─ Admin Portal container (3002)
 │  └─ API container (8000)

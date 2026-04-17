@@ -8,7 +8,7 @@ import { clearSession, getSession } from "@qes-ui/lib/session";
 
 export function DoctorShell({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const session = getSession("doctor");
+  const session = getSession("clinic");
 
   const navItems: NavItem[] = useMemo(
     () => [
@@ -49,16 +49,16 @@ export function DoctorShell({ children }: { children: ReactNode }) {
   }
 
   async function onLogout() {
-    await apiFetch("doctor", "/api/v1/auth/logout", { method: "POST" });
-    clearSession("doctor");
+    await apiFetch("clinic", "/api/v1/auth/logout", { method: "POST" });
+    clearSession("clinic");
     router.replace("/login");
     router.refresh();
   }
 
   return (
     <AppShell
-      portal="doctor"
-      portalLabel="Doctor"
+      portal="clinic"
+      portalLabel="Clinic"
       navItems={navItems}
       user={session.user}
       onLogout={onLogout}

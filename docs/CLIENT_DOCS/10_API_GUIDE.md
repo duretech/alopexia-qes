@@ -307,7 +307,7 @@ Security Benefits:
 
 ### **PATCH /prescriptions/:prescription_id/revoke**
 
-Revoke a prescription (doctor only).
+Revoke a prescription (clinic only).
 
 **Headers:**
 ```

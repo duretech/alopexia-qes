@@ -24,10 +24,20 @@ from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.services.auth.models import AuthenticatedUser, UserType, Role
+from app.utils.encryption import decrypt_field
 from app.services.auth.provider import get_auth_provider, IdentityClaims
 from app.services.auth.session_manager import SessionManager
 
 logger = get_logger(component="auth_dependency")
+
+
+def _safe_decrypt(value: str) -> str:
+    """Decrypt an encrypted field, falling back to plaintext if decryption fails."""
+    try:
+        return decrypt_field(value)
+    except Exception:
+        return value
+
 
 # Session cookie/header name
 _SESSION_HEADER = "X-Session-Token"
@@ -172,7 +182,7 @@ async def _resolve_user(
             user_type=UserType.DOCTOR,
             role=Role.DOCTOR,
             email=row.email,
-            full_name=row.full_name,
+            full_name=_safe_decrypt(row.full_name),
             clinic_id=row.clinic_id,
         )
 
@@ -194,7 +204,7 @@ async def _resolve_user(
             user_type=UserType.PHARMACY_USER,
             role=Role.PHARMACY_USER,
             email=row.email,
-            full_name=row.full_name,
+            full_name=_safe_decrypt(row.full_name),
         )
 
     elif user_type == UserType.ADMIN_USER:
@@ -217,7 +227,7 @@ async def _resolve_user(
             user_type=UserType.ADMIN_USER,
             role=admin_role,
             email=row.email,
-            full_name=row.full_name,
+            full_name=_safe_decrypt(row.full_name),
         )
 
     elif user_type == UserType.AUDITOR:

@@ -72,8 +72,16 @@ from app.schemas.admin import (
 from app.services.auth.models import AuthenticatedUser
 from app.services.authz.dependencies import require_permission
 from app.services.authz.rbac import Permission
+from app.utils.encryption import decrypt_field
 
 logger = get_logger(component="admin_endpoint")
+
+
+def _safe_decrypt(value: str) -> str:
+    try:
+        return decrypt_field(value)
+    except Exception:
+        return value
 
 router = APIRouter()
 
@@ -612,7 +620,7 @@ async def list_users(
                 "id": str(d.id),
                 "user_type": "doctor",
                 "email": d.email,
-                "full_name": d.full_name,
+                "full_name": _safe_decrypt(d.full_name),
                 "license_number": d.license_number,
                 "is_active": d.is_active,
                 "mfa_enabled": d.mfa_enabled,
@@ -632,8 +640,8 @@ async def list_users(
                 "id": str(p.id),
                 "user_type": "pharmacy_user",
                 "email": p.email,
-                "full_name": p.full_name,
-                "pharmacy_name": p.pharmacy_name,
+                "full_name": _safe_decrypt(p.full_name),
+                "pharmacy_name": _safe_decrypt(p.pharmacy_name),
                 "pharmacy_license_number": p.pharmacy_license_number,
                 "is_active": p.is_active,
                 "mfa_enabled": p.mfa_enabled,
@@ -653,7 +661,7 @@ async def list_users(
                 "id": str(a.id),
                 "user_type": "admin_user",
                 "email": a.email,
-                "full_name": a.full_name,
+                "full_name": _safe_decrypt(a.full_name),
                 "role": a.role,
                 "is_active": a.is_active,
                 "mfa_enabled": a.mfa_enabled,

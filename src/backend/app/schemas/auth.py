@@ -12,7 +12,7 @@ class PhoneLoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     phone_number: str = Field(..., min_length=8, max_length=20)
-    portal: Literal["doctor", "pharmacy", "admin"]
+    portal: Literal["clinic", "doctor", "pharmacy", "admin"]
 
 
 class AuthUserResponse(BaseModel):
@@ -23,6 +23,7 @@ class AuthUserResponse(BaseModel):
     full_name: str
     role: str
     tenant_id: UUID
+    clinic_id: UUID | None = None
 
 
 class AuthenticatedResponse(BaseModel):

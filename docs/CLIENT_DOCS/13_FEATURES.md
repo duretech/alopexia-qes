@@ -4,7 +4,7 @@
 
 ### **1. Digital Prescription Upload**
 
-**What:** Doctors upload prescription PDFs signed with digital signature.
+**What:** Clinics upload prescription PDFs signed with digital signature.
 
 **Why:**
 ```
@@ -16,19 +16,18 @@ Traditional Process:
 
 QES Flow:
 ├─ Digital prescription → stored in cloud
-├─ Multiple copies → prescriptions, pharmacy, doctor all have access
+├─ Multiple copies → prescriptions, pharmacy, clinic all have access
 ├─ Automatic verification → no manual transcription errors
 ├─ Full audit trail → cannot be faked
 ```
 
 **How:**
-1. Doctor opens doctor portal
+1. Clinic opens clinic portal
 2. Click "Upload Prescription"
 3. Select signed PDF
-4. Enter patient ID and medication details
-5. Click "Upload"
-6. System verifies signature (automatic)
-7. Pharmacy can download and dispense
+4. Click "Upload"
+5. System verifies signature (automatic)
+6. Pharmacy can download and dispense
 
 **Features:**
 ```
@@ -51,9 +50,9 @@ QES Flow:
 **Why:**
 ```
 Problem Without Verification:
-├─ How do we know doctor actually signed?
+├─ How do we know clinic actually signed?
 ├─ Could be forged
-├─ Could be from unauthorized person
+├─ Could be from unauthorized source
 ├─ No legal proof
 └─ Pharmacy might dispense invalid prescription
 
@@ -67,8 +66,8 @@ Solution With Verification:
 
 **Process:**
 ```
-1. Doctor signs PDF with digital signature
-2. Doctor uploads to QES Flow
+1. Clinic signs PDF with digital signature
+2. Clinic uploads to QES Flow
 3. System calls Dokobit (QTSP)
 4. Dokobit checks:
    ├─ Signature matches document

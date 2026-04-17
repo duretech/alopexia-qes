@@ -104,7 +104,7 @@ export default function PrescriptionDetailPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiFetch("doctor", `/api/v1/prescriptions/${id}`);
+        const res = await apiFetch("clinic", `/api/v1/prescriptions/${id}`);
         if (!res.ok) {
           if (!cancelled) setError("Prescription not found.");
           return;
@@ -128,7 +128,7 @@ export default function PrescriptionDetailPage() {
     setCancelling(true);
     setCancelError(null);
     try {
-      const res = await apiFetch("doctor", `/api/v1/prescriptions/${id}/cancel`, {
+      const res = await apiFetch("clinic", `/api/v1/prescriptions/${id}/cancel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason: cancelReason }),

@@ -100,7 +100,7 @@ Before contacting support, collect:
 ```
 Essential Information:
 ├─ Your name and clinic
-├─ Your user role (doctor, pharmacist, admin)
+├─ Your user role (clinic, pharmacist, admin)
 ├─ When issue started (specific time/date)
 ├─ What were you trying to do?
 ├─ Exact error message (copy & paste)
@@ -117,7 +117,7 @@ Technical Details:
 
 If Prescription-Related:
 ├─ Prescription ID (if known)
-├─ Doctor name
+├─ Clinic name (originating)
 ├─ Clinic name
 ├─ Patient ID (last 4 digits only, for privacy)
 └─ Timestamp of issue
@@ -148,7 +148,7 @@ Try These First:
 Subject Line:
 ├─ Clear description
 ├─ Include user role
-├─ Example: "Doctor: Cannot upload prescriptions"
+├─ Example: "Clinic: Cannot upload prescriptions"
 
 Body:
 1. What you were doing:
@@ -233,7 +233,7 @@ Hours: 9 AM - 5 PM, Mon-Fri (UTC+2)
 Website: https://www.dokobit.com/support
 
 Include:
-├─ Doctor name
+├─ Clinic name (originating)
 ├─ Certificate issuer
 ├─ Error message from Dokobit
 └─ Prescription ID (if available)
@@ -311,7 +311,7 @@ Access: Via Azure Portal (requires subscription)
 
 | Role | Start Here | Time |
 |------|-----------|------|
-| Doctor | 01_SYSTEM_OVERVIEW.md → 14_PRESCRIPTION_FLOW.md | 1 hour |
+| Clinic | 01_SYSTEM_OVERVIEW.md → 14_PRESCRIPTION_FLOW.md | 1 hour |
 | Pharmacist | SYSTEM_OVERVIEW.md → 13_FEATURES.md (Dispensing section) | 45 min |
 | Admin | 02_ARCHITECTURE.md → 15_USER_MANAGEMENT.md | 2 hours |
 | Compliance | 06_AUDIT_TRAIL.md → 04_GDPR_COMPLIANCE.md | 2 hours |

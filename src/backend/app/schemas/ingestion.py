@@ -15,15 +15,14 @@ from pydantic import BaseModel, Field, ConfigDict
 class PrescriptionUploadMetadata(BaseModel):
     """Metadata sent alongside the PDF upload as a JSON form field.
 
-    Required fields: patient_id, idempotency_key.
-    All other fields are optional and can be provided by the doctor
-    at upload time or extracted from the PDF later.
+    Required fields: idempotency_key.
+    All other fields are optional.
     """
     model_config = ConfigDict(extra="forbid")
 
-    patient_id: UUID = Field(
-        ...,
-        description="UUID of the patient this prescription is for",
+    patient_id: UUID | None = Field(
+        default=None,
+        description="UUID of the patient this prescription is for (optional)",
     )
     idempotency_key: str = Field(
         ...,

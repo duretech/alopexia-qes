@@ -22,7 +22,7 @@ Each audit event is cryptographically linked to the previous one, creating an un
 ```
 Event 1
 ├─ Action: "Prescription uploaded"
-├─ Data: { doctor_id: ABC, file_size: 250KB, ... }
+├─ Data: { clinic_id: ABC, file_size: 250KB, ... }
 ├─ Timestamp: 2024-01-15 10:30:00
 └─ Hash: HMAC-SHA256(event_1_data) = abc123def456...
 
@@ -74,9 +74,9 @@ With Hash-Chaining:
 
 | Event | When | Data Logged |
 |-------|------|-------------|
-| `PRESCRIPTION_UPLOADED` | Doctor uploads PDF | File size, patient ID, doctor ID, file hash |
+| `PRESCRIPTION_UPLOADED` | Clinic uploads PDF | File size, clinic ID, file hash |
 | `PRESCRIPTION_VERIFIED` | QTSP returns result | Status (valid/invalid), timestamp, cert details |
-| `PRESCRIPTION_REVOKED` | Doctor revokes prescription | Reason, timestamp, doctor ID |
+| `PRESCRIPTION_REVOKED` | Clinic revokes prescription | Reason, timestamp, clinic ID |
 | `PRESCRIPTION_DISPENSED` | Pharmacy confirms dispensing | Pharmacist ID, quantity, timestamp |
 
 ### **User Events**
@@ -123,9 +123,9 @@ With Hash-Chaining:
 {
   "id": 12345,                      // Sequential, immutable ID
   "event_id": "uuid-string",        // Unique event identifier
-  "tenant_id": "clinic-uuid",       // Which clinic (multi-tenancy)
+  "tenant_id": "tenant-uuid",       // Which tenant (multi-tenancy)
   "event_type": "PRESCRIPTION_UPLOADED",
-  "actor_id": "doctor-uuid",        // Who did it
+  "actor_id": "clinic-uuid",        // Which clinic did it
   "action": "upload_prescription",  // What action
   "timestamp": "2024-01-15T10:30:00Z",
   "ip_address": "192.168.1.100",    // Where from
@@ -166,9 +166,9 @@ Features:
 ### **Search Examples**
 
 ```
-1. Find all prescriptions uploaded by doctor ABC
+1. Find all prescriptions uploaded by clinic ABC
    Filter: event_type = PRESCRIPTION_UPLOADED
-           AND actor_id = "doctor-abc-uuid"
+           AND actor_id = "clinic-abc-uuid"
 
 2. Find all access to prescription XYZ
    Filter: resource_id = "prescription-xyz-uuid"
@@ -223,8 +223,8 @@ Features:
 ### **Export Format (JSON Lines)**
 
 ```json
-{"id":1,"event_type":"USER_LOGIN","actor_id":"doctor-123","timestamp":"2024-01-01T08:00:00Z","ip_address":"192.168.1.100","result":"success"}
-{"id":2,"event_type":"PRESCRIPTION_UPLOADED","actor_id":"doctor-123","timestamp":"2024-01-01T08:05:00Z","resource_id":"rx-456","result":"success"}
+{"id":1,"event_type":"USER_LOGIN","actor_id":"clinic-123","timestamp":"2024-01-01T08:00:00Z","ip_address":"192.168.1.100","result":"success"}
+{"id":2,"event_type":"PRESCRIPTION_UPLOADED","actor_id":"clinic-123","timestamp":"2024-01-01T08:05:00Z","resource_id":"rx-456","result":"success"}
 {"id":3,"event_type":"PRESCRIPTION_VERIFIED","actor_id":"system","timestamp":"2024-01-01T08:06:00Z","resource_id":"rx-456","details":{"status":"valid"},"result":"success"}
 {"id":4,"event_type":"DOCUMENT_DOWNLOADED","actor_id":"pharmacy-789","timestamp":"2024-01-01T08:10:00Z","resource_id":"rx-456","result":"success"}
 ...

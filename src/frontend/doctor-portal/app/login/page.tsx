@@ -3,9 +3,9 @@ import { LoginView } from "@qes-ui/components/LoginView";
 export default function LoginPage() {
   return (
     <LoginView
-      portal="doctor"
-      heroTitle="Clinical prescriptions, verified signatures"
-      heroSubtitle="Upload signed PDFs, track verification, and keep a clear audit trail aligned with QES and retention requirements."
+      portal="clinic"
+      heroTitle="Clinic prescription upload portal"
+      heroSubtitle="Upload signed PDFs directly from your clinic, track verification status, and maintain a complete audit trail."
     />
   );
 }

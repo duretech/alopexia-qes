@@ -6,7 +6,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                       CLIENT LAYER (Browser)                     │
 ├──────────────┬──────────────────┬──────────────────────────────┤
-│  Doctor      │   Pharmacy       │      Admin                   │
+│  Clinic      │   Pharmacy       │      Admin                   │
 │  Portal      │   Portal         │      Portal                  │
 │  (Port 3000) │   (Port 3001)    │      (Port 3002)             │
 └──────────────┴──────────────────┴──────────────────────────────┘
@@ -47,15 +47,18 @@
 ```
 USERS TABLE
 ├── admin_users (id, email, role, tenant_id, ...)
-├── doctors (id, email, license_number, tenant_id, ...)
+├── clinics (id, name, tenant_id, ...)
 └── pharmacy_users (id, email, pharmacy_name, tenant_id, ...)
+
+AUTHENTICATION TABLE
+├── phone_auth_accounts (id, phone_hash, user_id, user_type, ...)
 
 PRESCRIPTIONS TABLE
 ├── id (UUID, primary key)
 ├── tenant_id (UUID, for multi-tenancy)
+├── clinic_id (UUID, clinic that uploaded)
 ├── file_path (S3 URL, encrypted in DB)
 ├── status (pending_verification, verified, failed)
-├── created_by (doctor UUID)
 ├── created_at (timestamp)
 └── is_deleted (soft delete flag)
 
@@ -106,11 +109,10 @@ In Transit
 ### **Field-Level Encryption**
 ```
 Sensitive Fields
-├── Phone Numbers (doctor, pharmacist)
+├── Phone Numbers (clinic, pharmacist)
 ├── PIN (authentication)
 ├── OTP (one-time password)
-├── Prescription metadata
-└── Dosage instructions
+├── Clinic names and identifiers
 
 Encryption Algorithm: AES-256-GCM
 Key Storage: Azure Key Vault
@@ -132,7 +134,7 @@ Prescription PDF
 ## 🔄 Data Flow - Prescription Upload
 
 ```
-1. Doctor Selects PDF
+1. Clinic Selects PDF
    ↓
 2. Browser (Client-Side)
    ├─ Validate file (type, size)
@@ -141,8 +143,8 @@ Prescription PDF
 3. API Server (FastAPI)
    ├─ Authenticate (JWT token)
    ├─ Authorize (check RBAC permissions)
-   ├─ Validate metadata
-   └─ Generate idempotency key
+   ├─ Validate idempotency key
+   └─ Record clinic origin
    ↓
 4. Malware Scanning (ClamAV)
    ├─ Scan PDF for viruses
@@ -206,10 +208,10 @@ Token Details
 
 ```
 Roles in System
-├── Doctor (6 permissions)
-│   ├─ Upload prescriptions
-│   ├─ View own prescriptions
-│   ├─ Revoke own prescriptions
+├── Clinic (6 permissions)
+│   ├─ Upload prescriptions for clinic
+│   ├─ View own clinic prescriptions
+│   ├─ Revoke own clinic prescriptions
 │   └─ View verification results
 │
 ├── Pharmacist (8 permissions)
@@ -271,14 +273,16 @@ Referrer-Policy: strict-origin-when-cross-origin
 ## 🏥 Multi-Tenancy Architecture
 
 ```
-Tenant 1 (Clinic A)
-├── Users (doctors, pharmacists)
+Tenant 1 (Healthcare Organization A)
+├── Clinics (Clinic A, Clinic B)
+├── Pharmacy Users (pharmacists)
 ├── Prescriptions (isolated)
 ├── Audit Logs (isolated)
 └── Configuration
 
-Tenant 2 (Clinic B)
-├── Users (doctors, pharmacists)
+Tenant 2 (Healthcare Organization B)
+├── Clinics (Clinic C, Clinic D)
+├── Pharmacy Users (pharmacists)
 ├── Prescriptions (isolated)
 ├── Audit Logs (isolated)
 └── Configuration

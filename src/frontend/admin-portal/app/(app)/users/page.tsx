@@ -137,7 +137,7 @@ export default function UsersPage() {
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Email</th>
+                  {/* <th>Email</th> */}
                   <th>Type</th>
                   <th>Role / License</th>
                   <th>Status</th>
@@ -150,7 +150,7 @@ export default function UsersPage() {
                 {users.map((u) => (
                   <tr key={u.id}>
                     <td style={{ fontWeight: 500 }}>{u.full_name}</td>
-                    <td style={{ fontSize: "0.875rem" }}>{u.email}</td>
+                    {/* <td style={{ fontSize: "0.875rem" }}>{u.email}</td> */}
                     <td><Badge tone={userTypeTone(u.user_type)}>{u.user_type.replace(/_/g, " ")}</Badge></td>
                     <td style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)" }}>
                       {u.role ?? u.license_number ?? u.pharmacy_name ?? "—"}

@@ -9,7 +9,7 @@
 ### **Issue: "OTP not received"**
 
 **Symptoms:**
-- Doctor clicks "Send OTP" but SMS doesn't arrive
+- User clicks "Send OTP" but SMS doesn't arrive
 - After 10 minutes, still no message
 
 **Causes:**
@@ -200,7 +200,7 @@ Less Likely:
 
 3. **If actually infected:**
    - Do NOT upload
-   - Clean file on doctor's computer
+   - Clean file on clinic's computer
    - Use antivirus to remove malware
    - Re-save/export PDF
    - Then upload
@@ -278,14 +278,14 @@ Less Likely:
 
 **Causes:**
 ```
-Doctor's Certificate:
+Clinic's Certificate:
 ├─ Expired (past valid date)
 ├─ Revoked (license issue)
 ├─ Not trusted (wrong issuer)
 └─ Invalid (corrupted)
 
 PDF Signature:
-├─ Not signed (doctor forgot)
+├─ Not signed (clinic forgot)
 ├─ Corrupted (file damaged)
 ├─ Tampered with (file modified after signing)
 └─ Wrong format
@@ -293,7 +293,7 @@ PDF Signature:
 
 **Solutions:**
 
-1. **Tell doctor to check certificate:**
+1. **Tell clinic to check certificate:**
    - Certificate expiration date (past?)
    - Contact certificate issuer if expired
    - Request new certificate
@@ -305,7 +305,7 @@ PDF Signature:
    - Does tool support XAdES signatures?
 
 3. **Verify PDF:**
-   - Doctor: re-sign PDF before upload
+   - Clinic: re-sign PDF before upload
    - Don't modify PDF after signing
    - Upload freshly signed version
 
@@ -357,7 +357,7 @@ File Issue:
 3. **Contact support:**
    - Provide: Prescription ID
    - Timestamp of upload
-   - Doctor and clinic name
+   - Clinic name
    - Email: support@qesflow.com
 
 4. **Workaround:**
@@ -398,8 +398,8 @@ Less Likely:
 
 2. **Verify clinic:**
    - Check prescription clinic matches
-   - Doctor in Clinic A, Pharmacist in Clinic A? ✅
-   - Doctor in Clinic A, Pharmacist in Clinic B? ❌
+   - Clinic A, Pharmacist in Clinic A? ✅
+   - Clinic A, Pharmacist in Clinic B? ❌
 
 3. **Check account status:**
    - Is your account active?

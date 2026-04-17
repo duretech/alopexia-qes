@@ -50,8 +50,7 @@ Implementation:
 What: Users can correct inaccurate data
 Implementation:
 ├─ Profile update endpoints
-├─ User can modify: name, email, phone
-├─ Doctors can update: license number
+├─ User can modify: phone number
 ├─ Pharmacists can update: pharmacy details
 ├─ Changes logged in audit trail
 └─ Version control (old data retained for audit)
@@ -124,7 +123,7 @@ Implementation:
 
 ### **Activity 1: Prescription Upload**
 ```
-Personal Data: Doctor ID, Patient ID, signature details
+Personal Data: Clinic ID, signature details
 Purpose: Prescription verification and processing
 Legal Basis: Healthcare regulation, contractual obligation
 Retention: 7 years (per healthcare law)
@@ -210,15 +209,14 @@ All Prescription-Related Data Is Encrypted:
 
 ### **Access Control**
 ```
-Who Can Access Patient Data:
-├─ Authorized doctor (creator)
+Who Can Access Prescription Data:
+├─ Authorized clinic (creator)
 ├─ Assigned pharmacist (for dispensing)
 ├─ System admin (with logging)
 ├─ Auditors (restricted read-only access)
-└─ Patient (via data export)
 
 Access Levels:
-├─ Doctors: Own prescriptions only
+├─ Clinics: Own clinic prescriptions only
 ├─ Pharmacists: Assigned prescriptions only
 ├─ Admins: All (logged and audited)
 └─ Regular users: Cannot access other's data

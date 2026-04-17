@@ -43,7 +43,7 @@ export default function AuditPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiFetch("doctor", "/api/v1/prescriptions/audit/own?limit=100");
+        const res = await apiFetch("clinic", "/api/v1/prescriptions/audit/own?limit=100");
         if (!res.ok) {
           if (!cancelled) setError("Could not load audit trail.");
           return;

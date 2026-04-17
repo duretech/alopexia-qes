@@ -10,13 +10,13 @@ QES Flow has 6 distinct roles with different permissions:
 └──────────┬──────────┘
            │ manages
 ┌──────────┴──────────┐
-│  Tenant Admin        │ (Clinic administrator)
+│  Tenant Admin        │ (Organization administrator)
 └──────────┬──────────┘
            │ manages
 ┌──┬──────┴──────┬─────┐
 │  │              │     │
 ▼  ▼              ▼     ▼
-Dr Ph    Clinic Admin   Compliance Officer
+Clinic Ph    Clinic Admin   Compliance Officer
 ```
 
 ---
@@ -92,10 +92,10 @@ Mitigation:
 **Responsibilities:**
 ```
 User Management:
-├─ Create users (doctors, pharmacists, clinic admins)
+├─ Create users (clinics, pharmacists, clinic admins)
 ├─ Suspend/reactivate users
 ├─ Reset user passwords
-├─ Manage user roles (within clinic)
+├─ Manage user roles (within organization)
 └─ View user activity logs
 
 Clinic Configuration:
@@ -144,9 +144,9 @@ NOT:
 **Risk Level:** 🟠 HIGH
 ```
 Can:
-├─ Suspend any user in clinic (including doctors)
-├─ View all prescriptions in clinic
-├─ Access all patient data in clinic
+├─ Suspend any user in organization (including clinics)
+├─ View all prescriptions in organization
+├─ Access all prescription data in organization
 └─ Generate reports with sensitive info
 
 Mitigation:
@@ -158,51 +158,51 @@ Mitigation:
 
 ---
 
-### **3. Doctor**
+### **3. Clinic**
 
-**Access Level:** Medium (Clinical-level access)
+**Access Level:** Medium (Clinic-level access)
 
 **Responsibilities:**
 ```
 Prescriptions:
-├─ Upload own prescriptions
-├─ View own prescriptions
-├─ Revoke own prescriptions
+├─ Upload prescriptions for clinic
+├─ View clinic prescriptions
+├─ Revoke clinic prescriptions
 ├─ View verification status
 └─ See which pharmacies dispensed
 
 Profile:
-├─ Update own profile (email, phone)
-├─ Change own PIN
-├─ View own activity log
+├─ Update clinic profile (phone)
+├─ Change clinic PIN
+├─ View clinic activity log
 └─ Request data export
 
-What Doctors CANNOT Do:
-├─ Access other doctors' prescriptions
+What Clinics CANNOT Do:
+├─ Access other clinics' prescriptions
 ├─ Create users
 ├─ Suspend users
 ├─ View audit logs
 ├─ Access admin settings
-└─ See other doctors' activity
+└─ See other clinics' activity
 
 Permissions Count: 6
 ```
 
 **Who Has This Role:**
 ```
-Doctors:
-├─ Medical doctors
-├─ Nurses (if authorized to prescribe)
-├─ Physician assistants (if authorized)
-└─ Other licensed prescribers
+Clinic Users:
+├─ Clinic representatives
+├─ Authorized clinic staff
+├─ Clinic administrators at user level
+└─ Clinic coordinators
 ```
 
 **Scope:**
 ```
-✅ Can see: Own prescriptions only
-❌ Cannot see: Other doctors' prescriptions
-❌ Cannot see: Patient data without prescription
+✅ Can see: Own clinic prescriptions only
+❌ Cannot see: Other clinics' prescriptions
 ❌ Cannot view audit logs
+❌ Cannot view system settings
 ```
 
 **Risk Level:** 🟡 MEDIUM
@@ -210,10 +210,10 @@ Doctors:
 Can:
 ├─ Upload prescriptions
 ├─ Revoke prescriptions (undo sent prescription)
-└─ View own activity
+└─ View own clinic activity
 
 Cannot:
-├─ Access other doctors' data
+├─ Access other clinics' data
 ├─ Delete data
 └─ View system settings
 
@@ -462,10 +462,9 @@ Process:
 1. Tenant Admin (or Platform Admin) goes to "Manage Users"
 2. Click "Create New User"
 3. Enter:
-   ├─ Email
    ├─ Phone number
-   ├─ Role (Doctor, Pharmacist, Admin)
-   ├─ License number (if doctor/pharmacist)
+   ├─ Role (Clinic, Pharmacist, Admin)
+   ├─ License number (if pharmacist)
    └─ Clinic assignment
 4. Click "Create"
 
@@ -532,7 +531,7 @@ Who Can Suspend:
 
 Process:
 1. Admin goes to "Manage Users"
-2. Finds user (e.g., Dr. Smith)
+2. Finds user (e.g., Clinic A)
 3. Clicks "Suspend"
 4. Enters reason (required)
 5. Confirms suspension
@@ -650,7 +649,7 @@ After Deletion:
 ✅ DO:
 ├─ Review monthly who has which roles
 ├─ Suspend users immediately upon termination
-├─ Require license verification for doctors
+├─ Verify clinic credentials
 ├─ Update user permissions when roles change
 ├─ Document all user changes
 ├─ Review audit logs for suspicious activity
@@ -660,7 +659,7 @@ After Deletion:
 ├─ Defer suspending users who left
 ├─ Give multiple people admin account
 ├─ Make someone admin if not necessary
-├─ Forget to change passwords in shared areas
+├─ Forget to change credentials in shared areas
 └─ Share credentials
 ```
 
@@ -676,22 +675,22 @@ Example Audit Log:
 Event: USER_CREATED
 ├─ Created by: admin-abc123
 ├─ Timestamp: 2026-04-13T10:00:00Z
-├─ New user: doctor-def456
-├─ Role: doctor
-└─ Clinic: clinic-xyz789
+├─ New user: clinic-def456
+├─ Role: clinic
+└─ Organization: org-xyz789
 
 Event: USER_SUSPENDED
 ├─ Suspended by: admin-abc123
 ├─ Timestamp: 2026-04-13T14:30:00Z
-├─ Suspended user: doctor-def456
-├─ Reason: License expired (doc ref: #2026-04-15)
+├─ Suspended user: clinic-def456
+├─ Reason: Temporary closure (doc ref: #2026-04-15)
 └─ Effective: immediate
 
 Event: USER_REACTIVATED
 ├─ Reactivated by: admin-abc123
 ├─ Timestamp: 2026-04-20T09:00:00Z
-├─ Reactivated user: doctor-def456
-├─ Reason: License renewal verified
+├─ Reactivated user: clinic-def456
+├─ Reason: Reopening verified
 └─ Effective: immediate
 ```
 

@@ -1,4 +1,4 @@
-export type PortalKind = "doctor" | "pharmacy" | "admin";
+export type PortalKind = "clinic" | "pharmacy" | "admin";
 
 export type SessionUser = {
   id: string;
@@ -6,6 +6,7 @@ export type SessionUser = {
   full_name: string;
   role: string;
   tenant_id: string;
+  clinic_id?: string;
 };
 
 export type StoredSession = {

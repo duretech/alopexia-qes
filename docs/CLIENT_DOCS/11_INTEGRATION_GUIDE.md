@@ -88,7 +88,7 @@ Dokobit Qualifications:
 **1. Signature Verification**
 ```
 Process:
-1. Doctor uploads PDF with digital signature
+1. Clinic uploads PDF with digital signature
 2. API sends PDF to Dokobit
 3. Dokobit verifies:
    ├─ Signature is valid
@@ -190,7 +190,7 @@ If Dokobit is down:
 Option 1: Queue for retry (Recommended)
 ├─ Store prescription as pending
 ├─ Retry verification every 5 minutes
-├─ Notify doctor of delay
+├─ Notify clinic of delay
 └─ Auto-verify when service recovers
 
 Option 2: Manual review
@@ -200,7 +200,7 @@ Option 2: Manual review
 
 Option 3: Reject upload
 ├─ Return error to doctor
-├─ Doctor must retry later
+├─ Clinic must retry later
 └─ Not recommended (poor UX)
 ```
 
@@ -247,7 +247,7 @@ Compliance:
 ### **Scanning Process**
 
 ```
-1. Doctor uploads prescription PDF
+1. Clinic uploads prescription PDF
 2. API receives file (not saved yet)
 3. API scans with ClamAV
    ├─ ClamAV checks against virus definitions
@@ -255,7 +255,7 @@ Compliance:
    ├─ Returns result (clean/infected/suspicious)
 4. If infected:
    ├─ File rejected
-   ├─ Error returned to doctor
+   ├─ Error returned to clinic
    ├─ File never stored
    └─ Quarantine log created
 5. If clean:
@@ -313,7 +313,7 @@ If File Is Infected:
      "event_type": "MALWARE_DETECTED",
      "file_hash": "abc123...",
      "virus_name": "Trojan.PDF.Exploit",
-     "actor_id": "doctor-123",
+     "actor_id": "clinic-123",
      "timestamp": "2026-04-13T10:30:00Z"
    }
 
@@ -458,7 +458,7 @@ KeyVaultSecret secret = await client.GetSecretAsync("encryption-key");
 ### **Integration Flow**
 
 ```
-1. Doctor uploads prescription PDF
+1. Clinic uploads prescription PDF
 2. API encrypts PDF (AES-256)
 3. API uploads encrypted blob to Azure:
    ├─ Container: prescriptions
@@ -517,7 +517,7 @@ Application sends logs to Azure Monitor:
      "timestamp": "2026-04-13T10:30:00Z",
      "level": "INFO",
      "message": "Prescription uploaded",
-     "actor_id": "doctor-123",
+     "actor_id": "clinic-123",
      "prescription_id": "rx-456"
    }
 

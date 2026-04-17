@@ -34,7 +34,7 @@ export default function PrescriptionsPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiFetch("doctor", "/api/v1/prescriptions");
+        const res = await apiFetch("clinic", "/api/v1/prescriptions");
         if (!res.ok) {
           if (!cancelled) setError("Could not load prescriptions.");
           return;

@@ -36,7 +36,8 @@ export function AppShell(props: AppShellProps) {
       /> */}
       <aside className={`qes-sidebar ${menuOpen ? "qes-sidebar--open" : ""}`}>
         <div className="qes-sidebar__brand">
-          <img src="/logo.png" alt="Centa Bio Lab" style={{ height: "40px", width: "auto", marginBottom: "0.5rem", filter: "brightness(0) invert(1)" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/logo.png`} alt="Centa Bio Lab" style={{ height: "40px", width: "auto", marginBottom: "0.5rem", filter: "brightness(0) invert(1)" }} />
           <h1 className="qes-sidebar__title">{portalLabel}</h1>
         </div>
         <nav className="qes-sidebar__nav" aria-label="Main">

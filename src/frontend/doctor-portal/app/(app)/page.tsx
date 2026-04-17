@@ -4,14 +4,11 @@ import { useState, useRef } from "react";
 import { Badge } from "@qes-ui/components/Badge";
 import { Button } from "@qes-ui/components/Button";
 import { Card, CardHeader } from "@qes-ui/components/Card";
-import { TextField } from "@qes-ui/components/TextField";
 import { apiFetch, formatApiError } from "@qes-ui/lib/api";
+import { getSession } from "@qes-ui/lib/session";
 
 interface PrescriptionItem {
   file: File;
-  patientId: string;
-  medicationName: string;
-  dosage: string;
   idempotencyKey: string;
   status?: "pending" | "uploading" | "success" | "error";
   error?: string;
@@ -29,9 +26,19 @@ interface FileValidation {
   error?: string;
 }
 
+function maskClinicId(id: string): string {
+  const parts = id.split("-");
+  if (parts.length === 5) {
+    return `${parts[0]}-****-****-****-${parts[4]}`;
+  }
+  return `${id.slice(0, 8)}${"*".repeat(Math.max(0, id.length - 12))}${id.slice(-4)}`;
+}
+
 export default function UploadPage() {
+  const session = getSession("clinic");
+  const clinicId = session?.user?.clinic_id ?? "";
+
   const [files, setFiles] = useState<PrescriptionItem[]>([]);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
@@ -40,35 +47,21 @@ export default function UploadPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Determine current step based on progress
   const getProgressSteps = (): ProgressStep[] => {
     const step1Completed = files.length > 0;
-    const allFilesHaveDetails = files.length > 0 && files.every(f => f.patientId);
-    const step3Completed = files.some(f => f.status === "success");
-
-    let step1Status: "completed" | "current" | "pending" = "pending";
-    let step2Status: "completed" | "current" | "pending" = "pending";
-    let step3Status: "completed" | "current" | "pending" = "pending";
-
-    // Determine which step is current
-    if (!step1Completed) {
-      step1Status = "current";
-    } else if (!allFilesHaveDetails) {
-      step2Status = "current";
-    } else if (!step3Completed) {
-      step3Status = "current";
-    } else {
-      step3Status = "completed";
-    }
-
-    // Mark completed steps
-    if (step1Completed) step1Status = "completed";
-    if (allFilesHaveDetails && step1Status === "completed") step2Status = "completed";
+    const step2Completed = files.some(f => f.status === "success");
 
     return [
-      { number: 1, title: "Select PDF(s)", status: step1Status },
-      { number: 2, title: "Review Details", status: step2Status },
-      { number: 3, title: "Upload & Verify", status: step3Status },
+      {
+        number: 1,
+        title: "Select PDF(s)",
+        status: step1Completed ? "completed" : "current",
+      },
+      {
+        number: 2,
+        title: "Upload & Verify",
+        status: step2Completed ? "completed" : step1Completed ? "current" : "pending",
+      },
     ];
   };
 
@@ -102,7 +95,7 @@ export default function UploadPage() {
   }
 
   function addFiles(filesToAdd: File[]) {
-    filesToAdd.forEach(file => {
+    for (const file of filesToAdd) {
       const validation = validateFile(file);
       if (!validation.valid) {
         setFileValidation(validation);
@@ -110,38 +103,25 @@ export default function UploadPage() {
       }
       const newItem: PrescriptionItem = {
         file,
-        patientId: "",
-        medicationName: "",
-        dosage: "",
         idempotencyKey: `upload-${Date.now()}-${Math.random()}`,
         status: "pending",
       };
       setFiles(prev => [...prev, newItem]);
       setFileValidation({ valid: true });
-    });
+    }
   }
 
   function removePrescription(index: number) {
     setFiles(prev => prev.filter((_, i) => i !== index));
   }
 
-  function updatePrescription(index: number, updates: Partial<PrescriptionItem>) {
-    const updated = [...files];
-    updated[index] = { ...updated[index], ...updates };
-    setFiles(updated);
-  }
-
   function openPreview(index: number) {
     setPreviewIndex(index);
-    const file = files[index].file;
-    const url = URL.createObjectURL(file);
-    setPdfUrl(url);
+    setPdfUrl(URL.createObjectURL(files[index].file));
   }
 
   function closePreview() {
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-    }
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPreviewIndex(null);
     setPdfUrl("");
   }
@@ -152,47 +132,43 @@ export default function UploadPage() {
     let successCount = 0;
 
     for (let i = 0; i < files.length; i++) {
-      if (!files[i].patientId) continue;
+      if (files[i].status !== "pending") continue;
       const updated = [...files];
-      updated[i].status = "uploading";
+      updated[i] = { ...updated[i], status: "uploading" };
       setFiles(updated);
 
       const formData = new FormData();
       formData.append("file", files[i].file);
       formData.append(
         "metadata",
-        JSON.stringify({
-          patient_id: files[i].patientId,
-          idempotency_key: files[i].idempotencyKey,
-          medication_name: files[i].medicationName || undefined,
-          dosage: files[i].dosage || undefined,
-        }),
+        JSON.stringify({ idempotency_key: files[i].idempotencyKey }),
       );
 
       try {
-        const res = await apiFetch("doctor", "/api/v1/prescriptions/upload", {
+        const res = await apiFetch("clinic", "/api/v1/prescriptions/upload", {
           method: "POST",
           body: formData,
         });
 
         if (res.ok) {
           const data = (await res.json()) as { prescription_id: string; verification_status?: string };
-          updated[i].status = "success";
-          updated[i].result = {
-            prescription_id: data.prescription_id,
-            verification_status: data.verification_status || "pending"
+          updated[i] = {
+            ...updated[i],
+            status: "success",
+            result: {
+              prescription_id: data.prescription_id,
+              verification_status: data.verification_status ?? "pending",
+            },
           };
           successCount++;
         } else {
           const err = (await res.json()) as { detail?: unknown };
-          updated[i].status = "error";
-          updated[i].error = formatApiError(err as { detail?: string });
+          updated[i] = { ...updated[i], status: "error", error: formatApiError(err as { detail?: string }) };
         }
-      } catch (e) {
-        updated[i].status = "error";
-        updated[i].error = "Network error";
+      } catch {
+        updated[i] = { ...updated[i], status: "error", error: "Network error" };
       }
-      setFiles(updated);
+      setFiles([...updated]);
       await new Promise(resolve => setTimeout(resolve, 200));
     }
 
@@ -204,11 +180,11 @@ export default function UploadPage() {
   }
 
   const completedCount = files.filter(f => f.status === "success").length;
-  const canUpload = files.some(f => f.patientId && f.status === "pending");
+  const canUpload = files.some(f => f.status === "pending");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Success Animation */}
+      {/* Success banner */}
       {showSuccess && (
         <div style={{
           padding: "1.5rem",
@@ -228,20 +204,19 @@ export default function UploadPage() {
         </div>
       )}
 
-      {/* Enhanced Progress Steps */}
+      {/* Progress steps */}
       <Card padding="lg">
         <div style={{ display: "flex", gap: "2rem", alignItems: "center", flexWrap: "wrap" }}>
           {steps.map((step, idx) => {
             const isCompleted = step.status === "completed";
             const isCurrent = step.status === "current";
             const isPending = step.status === "pending";
-
             return (
               <div key={step.number} style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "0.75rem",
-                opacity: isCurrent ? 1 : isPending ? 0.4 : 0.8,
+                opacity: isPending ? 0.4 : 0.9,
                 transition: "opacity 0.3s ease",
               }}>
                 <div style={{
@@ -264,7 +239,6 @@ export default function UploadPage() {
                 }}>
                   {isCompleted ? "✓" : step.number}
                 </div>
-
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.125rem" }}>
                   <div style={{
                     fontSize: isCurrent ? "0.9375rem" : "0.875rem",
@@ -274,14 +248,9 @@ export default function UploadPage() {
                   }}>
                     {step.title}
                   </div>
-                  {isCompleted && (
-                    <div style={{ fontSize: "0.7rem", color: "var(--color-success-600)", fontWeight: 500 }}>✓ Completed</div>
-                  )}
-                  {isCurrent && (
-                    <div style={{ fontSize: "0.7rem", color: "var(--color-primary-600)", fontWeight: 500 }}>● In progress</div>
-                  )}
+                  {isCompleted && <div style={{ fontSize: "0.7rem", color: "var(--color-success-600)", fontWeight: 500 }}>✓ Completed</div>}
+                  {isCurrent && <div style={{ fontSize: "0.7rem", color: "var(--color-primary-600)", fontWeight: 500 }}>● In progress</div>}
                 </div>
-
                 {idx < steps.length - 1 && (
                   <div style={{
                     width: "40px",
@@ -297,19 +266,51 @@ export default function UploadPage() {
         </div>
       </Card>
 
-      {/* Main Card */}
+      {/* Clinic ID info */}
+      <Card padding="lg">
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{
+            width: "40px",
+            height: "40px",
+            borderRadius: "var(--radius-md)",
+            background: "var(--color-primary-100)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.25rem",
+            flexShrink: 0,
+          }}>
+            🏥
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.25rem" }}>
+              Clinic ID
+            </div>
+            {clinicId ? (
+              <span style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.9375rem",
+                color: "var(--color-neutral-900)",
+                fontWeight: 500,
+                letterSpacing: "0.04em",
+              }}>
+                {maskClinicId(clinicId)}
+              </span>
+            ) : (
+              <span style={{ color: "var(--color-neutral-400)", fontStyle: "italic", fontSize: "0.875rem" }}>No clinic assigned to this account</span>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Upload card */}
       <Card padding="lg">
         <CardHeader
           title="Upload Signed Prescriptions"
           description="Digitally signed PDFs with QTSP verification. Supports batch uploads."
-          action={
-            <a href="/prescription-template.pdf" download style={{ fontSize: "0.875rem", color: "var(--color-primary-600)", textDecoration: "none", fontWeight: 500 }}>
-              📋 Download template
-            </a>
-          }
         />
 
-        {/* Step 1: File Upload */}
+        {/* Step 1: File drop zone */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.75rem" }}>
           <div>
             <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
@@ -352,182 +353,101 @@ export default function UploadPage() {
           </div>
 
           {fileValidation && !fileValidation.valid && (
-            <div className="qes-alert qes-alert--error">
-              {fileValidation.error}
-            </div>
+            <div className="qes-alert qes-alert--error">{fileValidation.error}</div>
           )}
         </div>
 
-        {/* Step 2: File Queue with Inline Details */}
+        {/* Step 2: File queue */}
         {files.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", paddingBottom: "1.75rem", borderBottom: "1px solid var(--color-neutral-200)" }}>
-            <div>
-              <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
-                Step 2: Review Prescriptions ({completedCount}/{files.length} completed)
-              </h3>
-              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--color-neutral-500)" }}>
-                Click to preview, add details, or remove. All fields with * are required.
-              </p>
-            </div>
+            <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
+              Files queued ({completedCount}/{files.length} completed)
+            </h3>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               {files.map((item, idx) => (
                 <div key={idx} style={{
+                  padding: "0.875rem 1.25rem",
                   border: "1px solid var(--color-neutral-200)",
                   borderRadius: "var(--radius-md)",
                   background: item.status === "success" ? "var(--color-success-50)" : "var(--color-neutral-50)",
-                  overflow: "hidden",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: "1rem",
                 }}>
-                  {/* File Header */}
-                  <div style={{
-                    padding: "1rem 1.25rem",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 500, color: "var(--color-neutral-900)" }}>
-                        {item.file.name}
-                      </div>
-                      <div style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)", marginTop: "0.25rem" }}>
-                        {(item.file.size / 1024 / 1024).toFixed(2)} MB • {item.patientId ? `✓ Clinic: ${item.patientId.substring(0, 8)}...` : "⚠️ Clinic: required"} • {item.medicationName || "—"}
-                      </div>
-                      {item.status === "success" && item.result && (
-                        <div style={{ fontSize: "0.8125rem", color: "var(--color-success-600)", marginTop: "0.25rem" }}>
-                          ✓ {item.result.verification_status} • ID: {item.result.prescription_id}
-                        </div>
-                      )}
-                      {item.status === "error" && (
-                        <div style={{ fontSize: "0.8125rem", color: "var(--color-danger-600)", marginTop: "0.25rem" }}>
-                          ✗ {item.error}
-                        </div>
-                      )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, color: "var(--color-neutral-900)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {item.file.name}
                     </div>
-
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      {item.status === "uploading" && <Badge tone="warning">⏳ Uploading</Badge>}
-                      {item.status === "success" && <Badge tone="success">✓ Done</Badge>}
-                      {item.status === "error" && <Badge tone="danger">✗ Failed</Badge>}
-
-                      <Button variant="secondary" onClick={() => openPreview(idx)} style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}>
-                        👁️ Preview
-                      </Button>
-
-                      {(item.status === "pending" || !item.patientId) && (
-                        <>
-                          <Button
-                            variant="secondary"
-                            onClick={() => setExpandedIndex(expandedIndex === idx ? null : idx)}
-                            style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}
-                          >
-                            {!item.patientId ? "Add details" : "Edit"}
-                          </Button>
-                          <Button variant="ghost" onClick={() => removePrescription(idx)} style={{ padding: "0.5rem 0.5rem", fontSize: "0.8125rem", color: "var(--color-danger-600)" }}>
-                            ✕
-                          </Button>
-                        </>
-                      )}
+                    <div style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)", marginTop: "0.125rem" }}>
+                      {(item.file.size / 1024 / 1024).toFixed(2)} MB
                     </div>
+                    <div style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "0.375rem",
+                      marginTop: "0.375rem",
+                      padding: "0.2rem 0.5rem",
+                      background: "var(--color-neutral-100)",
+                      border: "1px solid var(--color-neutral-200)",
+                      borderRadius: "var(--radius-sm)",
+                      maxWidth: "100%",
+                      overflow: "hidden",
+                    }}>
+                      <span style={{ fontSize: "0.6875rem", color: "var(--color-neutral-400)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", flexShrink: 0 }}>
+                        🔑 key
+                      </span>
+                      <span style={{
+                        fontFamily: "var(--font-mono)",
+                        fontSize: "0.6875rem",
+                        color: "var(--color-neutral-500)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {btoa(item.idempotencyKey).slice(0, 32)}…
+                      </span>
+                    </div>
+                    {item.status === "success" && item.result && (
+                      <div style={{ fontSize: "0.8125rem", color: "var(--color-success-600)", marginTop: "0.25rem" }}>
+                        ✓ {item.result.verification_status} • ID: {item.result.prescription_id.slice(0, 8)}…
+                      </div>
+                    )}
+                    {item.status === "error" && (
+                      <div style={{ fontSize: "0.8125rem", color: "var(--color-danger-600)", marginTop: "0.25rem" }}>
+                        ✗ {item.error}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Inline Details Form */}
-                  {expandedIndex === idx && (
-                    <div style={{
-                      padding: "1.25rem",
-                      background: "var(--color-neutral-100)",
-                      borderTop: "1px solid var(--color-neutral-200)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "1rem",
-                    }}>
-                      <div>
-                        <h4 style={{ margin: "0 0 1rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
-                          Prescription Details
-                        </h4>
-                      </div>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexShrink: 0 }}>
+                    {item.status === "uploading" && <Badge tone="warning">⏳ Uploading</Badge>}
+                    {item.status === "success" && <Badge tone="success">✓ Done</Badge>}
+                    {item.status === "error" && <Badge tone="danger">✗ Failed</Badge>}
 
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }} className="details-custom">
-                        <TextField
-                          label="Clinic ID (UUID) *"
-                          value={item.patientId}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { patientId: e.target.value })}
-                          // placeholder="e.g., 66666666-6666-6666-6666-666666666666"
-                          hint="Unique clinic identifier"
-                          required
-                        />
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-                          <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--color-neutral-900)", display: "block", marginBottom: "0.25rem" }}>
-                            Idempotency Key
-                          </label>
-                          <div style={{
-                            padding: "0.75rem 1rem",
-                            background: "var(--color-neutral-50)",
-                            border: "1px solid var(--color-neutral-200)",
-                            borderRadius: "var(--radius-md)",
-                            fontSize: "0.875rem",
-                            color: "var(--color-neutral-600)",
-                            fontFamily: "monospace",
-                            wordBreak: "break-all",
-                            minHeight: "2.5rem",
-                            display: "flex",
-                            alignItems: "center",
-                          }}>
-                            {item.idempotencyKey.substring(0, 8)}...{item.idempotencyKey.substring(item.idempotencyKey.length - 8)}
-                          </div>
-                          <span style={{ fontSize: "0.75rem", color: "var(--color-neutral-500)", display: "block", marginTop: "0.25rem" }}>
-                            Auto-generated for deduplication
-                          </span>
-                        </div>
-                        {/* <TextField
-                          label="Medication Name"
-                          value={item.medicationName}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { medicationName: e.target.value })}
-                          placeholder="e.g., Amoxicillin 500mg"
-                        /> */}
-                      </div>
+                    <Button variant="secondary" onClick={() => openPreview(idx)} style={{ padding: "0.5rem 0.75rem", fontSize: "0.8125rem" }}>
+                      👁️ Preview
+                    </Button>
 
-                      {/* <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                        <TextField
-                          label="Dosage/Instructions"
-                          value={item.dosage}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { dosage: e.target.value })}
-                          placeholder="e.g., 1 tablet × 3 daily"
-                        />
-                        <TextField
-                          label="Idempotency Key"
-                          value={item.idempotencyKey}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePrescription(idx, { idempotencyKey: e.target.value })}
-                          hint="Auto-generated for deduplication"
-                          disabled
-                        />
-                      </div> */}
-
-                      <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", paddingTop: "0.5rem" }}>
-                        <Button variant="ghost" onClick={() => setExpandedIndex(null)}>
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="primary"
-                          onClick={() => setExpandedIndex(null)}
-                          disabled={!item.patientId}
-                        >
-                          Save Details
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                    {item.status === "pending" && (
+                      <Button variant="ghost" onClick={() => removePrescription(idx)} style={{ padding: "0.5rem 0.5rem", fontSize: "0.8125rem", color: "var(--color-danger-600)" }}>
+                        ✕
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Step 3: Upload Button */}
+        {/* Step 2: Upload button */}
         {files.length > 0 && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem", paddingTop: "1.75rem" }}>
             <div>
               <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9375rem", fontWeight: 600, color: "var(--color-neutral-900)" }}>
-                Step 3: Upload & Verification
+                Step 2: Upload & Verification
               </h3>
               <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--color-neutral-500)" }}>
                 Files will be scanned, validated, and verified. Pharmacy will be notified.
@@ -536,7 +456,7 @@ export default function UploadPage() {
 
             <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
               <Button variant="primary" disabled={uploading || !canUpload} onClick={uploadAll} style={{ minWidth: "160px" }}>
-                {uploading ? `Uploading (${completedCount}/${files.length})…` : `Upload ${files.length} Prescription${files.length !== 1 ? "s" : ""}`}
+                {uploading ? `Uploading (${completedCount}/${files.length})…` : `Upload ${files.filter(f => f.status === "pending").length} Prescription${files.filter(f => f.status === "pending").length !== 1 ? "s" : ""}`}
               </Button>
               {uploading && <Badge tone="warning">Processing...</Badge>}
             </div>
@@ -573,25 +493,14 @@ export default function UploadPage() {
 
       {/* PDF Preview Modal */}
       {previewIndex !== null && pdfUrl && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.7)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2000,
-        }} onClick={closePreview}>
-          <div style={{
-            width: "90%",
-            height: "90vh",
-            maxWidth: "900px",
-            background: "white",
-            borderRadius: "var(--radius-lg)",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }} onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}
+          onClick={closePreview}
+        >
+          <div
+            style={{ width: "90%", height: "90vh", maxWidth: "900px", background: "white", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+          >
             <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--color-neutral-200)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>📄 PDF Preview</h2>

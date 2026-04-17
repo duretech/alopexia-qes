@@ -122,6 +122,7 @@ export function LoginView({
       full_name: String(user.full_name ?? ""),
       role: String(user.role),
       tenant_id: String(user.tenant_id),
+      clinic_id: user.clinic_id ? String(user.clinic_id) : undefined,
     };
     setSession(portal, { token, user: normalized });
     router.replace("/");
@@ -136,7 +137,8 @@ export function LoginView({
       </div>
       <div className="qes-login-panel">
         <div className="qes-login-card">
-          <img src="/logo.png" alt="Centa Bio Lab" style={{ height: "48px", width: "auto", marginBottom: "1rem" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/logo.png`} alt="Centa Bio Lab" style={{ height: "48px", width: "auto", marginBottom: "1rem" }} />
           {state.step === "phone" && (
             <>
               <h2>Sign in with phone</h2>

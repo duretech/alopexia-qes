@@ -10,9 +10,9 @@ A QTSP is a company authorized by the EU to provide digital signature services t
 
 ```
 Healthcare Prescription Requirement:
-├─ Prescriptions must be digitally signed by doctor
+├─ Prescriptions must be digitally signed by clinic
 ├─ Signature must be legally binding
-├─ Must prove doctor actually authorized it
+├─ Must prove clinic actually authorized it
 ├─ Must prove signature hasn't been tampered with
 ├─ Evidence must be stored for 7 years
 
@@ -109,12 +109,12 @@ curl -X POST https://api.dokobit.com/api/v3/signature/verify \
 ### **How It Works**
 
 ```
-Step 1: Doctor Signs Prescription
-├─ Doctor uses digital signature (e.g., EstEID, smartcard)
+Step 1: Clinic Signs Prescription
+├─ Clinic uses digital signature (e.g., EstEID, smartcard)
 ├─ Signature embedded in PDF
 └─ Signature includes: certificate, timestamp, algorithm
 
-Step 2: Doctor Uploads Prescription
+Step 2: Clinic Uploads Prescription
 ├─ Browser sends PDF to API
 ├─ API receives PDF (not saved yet)
 └─ Signature is still inside PDF
@@ -285,9 +285,9 @@ Access Control:
 | Error | Cause | Solution |
 |-------|-------|----------|
 | `INVALID_API_KEY` | Wrong API key | Check Key Vault, redeploy |
-| `PDF_PROCESSING_ERROR` | Corrupted PDF | Ask doctor to re-upload |
-| `SIGNATURE_NOT_FOUND` | No signature in PDF | Doctor must sign before upload |
-| `CERTIFICATE_REVOKED` | Doctor's cert revoked | Contact doctor, suspend account |
+| `PDF_PROCESSING_ERROR` | Corrupted PDF | Ask clinic to re-upload |
+| `SIGNATURE_NOT_FOUND` | No signature in PDF | Clinic must sign before upload |
+| `CERTIFICATE_REVOKED` | Clinic's cert revoked | Contact clinic, suspend account |
 | `TIMESTAMP_ERROR` | Can't get timestamp | Retry (temporal issue) |
 | `TIMEOUT` | Dokobit slow | Retry with 10s timeout |
 
@@ -326,7 +326,7 @@ Permanent Failure:
 
 ```
 Problem with Synchronous (wait for result):
-├─ Doctor's upload request takes 3+ seconds
+├─ Clinic's upload request takes 3+ seconds
 ├─ Poor user experience (slow)
 ├─ Server threads blocked (scalability issue)
 └─ Timeout risk (Dokobit slow)

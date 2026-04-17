@@ -25,15 +25,19 @@ class Doctor(Base, TenantScopedMixin, TimestampMixin, SoftDeleteMixin):
     """
     __tablename__ = "doctors"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "external_idp_id", name="uq_doctor_tenant_idp"),
+        UniqueConstraint("tenant_id", "external_idp_id_hash", name="uq_doctor_tenant_idp_hash"),
         UniqueConstraint("tenant_id", "email", name="uq_doctor_tenant_email"),
         Index("ix_doctor_tenant_clinic", "tenant_id", "clinic_id"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
     external_idp_id = Column(
-        String(500), nullable=False,
-        comment="Immutable — identity from external IdP (OIDC sub claim)",
+        String(2048), nullable=False,
+        comment="ENCRYPTION_SENSITIVE — AES-256-GCM encrypted external IdP identity",
+    )
+    external_idp_id_hash = Column(
+        String(64), nullable=False,
+        comment="SHA-256 of external_idp_id (lowercase) — used for unique constraint and lookup",
     )
     email = Column(
         String(320), nullable=False,
@@ -80,14 +84,18 @@ class PharmacyUser(Base, TenantScopedMixin, TimestampMixin, SoftDeleteMixin):
     """
     __tablename__ = "pharmacy_users"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "external_idp_id", name="uq_pharma_tenant_idp"),
+        UniqueConstraint("tenant_id", "external_idp_id_hash", name="uq_pharma_tenant_idp_hash"),
         UniqueConstraint("tenant_id", "email", name="uq_pharma_tenant_email"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
     external_idp_id = Column(
-        String(500), nullable=False,
-        comment="Immutable — identity from external IdP",
+        String(2048), nullable=False,
+        comment="ENCRYPTION_SENSITIVE — AES-256-GCM encrypted external IdP identity",
+    )
+    external_idp_id_hash = Column(
+        String(64), nullable=False,
+        comment="SHA-256 of external_idp_id (lowercase) — used for unique constraint and lookup",
     )
     email = Column(
         String(320), nullable=False,
@@ -98,8 +106,8 @@ class PharmacyUser(Base, TenantScopedMixin, TimestampMixin, SoftDeleteMixin):
         comment="ENCRYPTION_SENSITIVE — pharmacy user full name",
     )
     pharmacy_name = Column(
-        String(500), nullable=False,
-        comment="Pharmacy / lab name",
+        String(2048), nullable=False,
+        comment="ENCRYPTION_SENSITIVE — AES-256-GCM encrypted pharmacy name",
     )
     pharmacy_license_number = Column(
         String(100), nullable=True,
@@ -124,14 +132,18 @@ class AdminUser(Base, TenantScopedMixin, TimestampMixin, SoftDeleteMixin):
     """
     __tablename__ = "admin_users"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "external_idp_id", name="uq_admin_tenant_idp"),
+        UniqueConstraint("tenant_id", "external_idp_id_hash", name="uq_admin_tenant_idp_hash"),
         UniqueConstraint("tenant_id", "email", name="uq_admin_tenant_email"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
     external_idp_id = Column(
-        String(500), nullable=False,
-        comment="Immutable — identity from external IdP",
+        String(2048), nullable=False,
+        comment="ENCRYPTION_SENSITIVE — AES-256-GCM encrypted external IdP identity",
+    )
+    external_idp_id_hash = Column(
+        String(64), nullable=False,
+        comment="SHA-256 of external_idp_id (lowercase) — used for unique constraint and lookup",
     )
     email = Column(
         String(320), nullable=False,

@@ -55,7 +55,7 @@ class Clinic(Base, TimestampMixin, SoftDeleteMixin):
     """
     __tablename__ = "clinics"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "name", name="uq_clinic_tenant_name"),
+        UniqueConstraint("tenant_id", "name_hash", name="uq_clinic_tenant_name_hash"),
     )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=generate_uuid)
@@ -64,7 +64,11 @@ class Clinic(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False, index=True,
         comment="Owning tenant — immutable after creation",
     )
-    name = Column(String(500), nullable=False, comment="Clinic name")
+    name = Column(String(2048), nullable=False, comment="ENCRYPTION_SENSITIVE — AES-256-GCM encrypted clinic name")
+    name_hash = Column(
+        String(64), nullable=False,
+        comment="SHA-256 of clinic name (lowercase) — used for unique constraint and lookup",
+    )
     address = Column(Text, nullable=True, comment="Physical address")
     phone = Column(String(50), nullable=True, comment="Contact phone")
     license_number = Column(

@@ -45,8 +45,8 @@ class Prescription(Base, TenantScopedMixin, TimestampMixin, SoftDeleteMixin):
     )
     patient_id = Column(
         UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"),
-        nullable=False, index=True,
-        comment="Immutable — patient this prescription is for",
+        nullable=True, index=True,
+        comment="Patient this prescription is for (nullable for clinic-direct uploads)",
     )
     clinic_id = Column(
         UUID(as_uuid=True), ForeignKey("clinics.id", ondelete="RESTRICT"),

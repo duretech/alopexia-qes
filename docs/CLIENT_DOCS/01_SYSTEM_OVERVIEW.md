@@ -2,18 +2,18 @@
 
 ## 🎯 What is QES Flow?
 
-QES Flow is a **Qualified Electronic Signature Flow management system** that enables doctors to securely upload digitally signed prescriptions, which are then verified and processed through a pharmacy network. The system ensures compliance with EU digital signature regulations (eIDAS) while maintaining GDPR-compliant data handling.
+QES Flow is a **Qualified Electronic Signature Flow management system** that enables clinics to securely upload digitally signed prescriptions, which are then verified and processed through a pharmacy network. The system ensures compliance with EU digital signature regulations (eIDAS) while maintaining GDPR-compliant data handling.
 
 ## 🔄 How It Works - End-to-End Flow
 
-### **Step 1: Doctor Uploads Prescription**
+### **Step 1: Clinic Uploads Prescription**
 ```
-Doctor Portal → Select PDF → Add Patient ID → Upload
+Clinic Portal → Select PDF → Upload
 ```
-- Doctor selects a digitally signed PDF prescription
+- Clinic selects a digitally signed PDF prescription
 - System validates file (size, format, malware scan)
-- Metadata is collected (patient ID, medication, dosage)
 - Idempotency key prevents duplicate uploads
+- All uploads are tracked to the clinic that submitted them
 
 ### **Step 2: System Processing**
 ```
@@ -67,7 +67,7 @@ Admin Portal → View Stats → Monitor Verifications → Export Audit Trail
 
 | Portal | Users | Purpose |
 |--------|-------|---------|
-| **Doctor Portal** | Doctors | Upload digitally signed prescriptions |
+| **Clinic Portal** | Clinics | Upload digitally signed prescriptions for their clinic |
 | **Pharmacy Portal** | Pharmacists | View and dispense prescriptions |
 | **Admin Portal** | Administrators | Monitor system, audit logs, compliance |
 
@@ -88,9 +88,7 @@ Admin Portal → View Stats → Monitor Verifications → Export Audit Trail
 **Everything related to prescriptions is encrypted:**
 
 - ✅ **Prescription PDFs** — Stored encrypted in Azure Blob Storage
-- ✅ **Patient Data** — Encrypted in database (AES-256-GCM)
-- ✅ **Medication Details** — Encrypted in database
-- ✅ **Doctor/Pharmacist Data** — Phone numbers, PINs, OTPs encrypted
+- ✅ **Clinic/Pharmacist Data** — Phone numbers, PINs, OTPs encrypted
 - ✅ **Sensitive Fields** — Automatically masked in logs
 - ✅ **Audit Trail** — Hash-chained with HMAC verification
 
@@ -104,7 +102,7 @@ Admin Portal → View Stats → Monitor Verifications → Export Audit Trail
 **Why it matters:**
 - Prevents duplicate prescriptions if network fails and user retries
 - Ensures "exactly-once" processing semantics
-- Doctor can safely retry upload without creating duplicates
+- Clinic can safely retry upload without creating duplicates
 
 ### **2. QTSP Verification (Dokobit)**
 **What it is:** Verification of digital signatures by a Qualified Trust Service Provider.
@@ -179,14 +177,14 @@ Admin Portal → View Stats → Monitor Verifications → Export Audit Trail
 ### **Before QES Flow**
 ```
 Manual Process:
-Doctor → Print → Sign → Scan → Email → Pharmacy
+Clinic → Print → Sign → Scan → Email → Pharmacy
 Problems: Slow, prone to errors, no audit trail, signature not verified
 ```
 
 ### **With QES Flow**
 ```
 Digital Process:
-Doctor → Digital Signature → Upload → QTSP Verification → Pharmacy
+Clinic → Digital Signature → Upload → QTSP Verification → Pharmacy
 Benefits: Fast, secure, verified, audited, compliant
 ```
 

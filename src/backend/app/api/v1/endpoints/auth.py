@@ -38,6 +38,16 @@ from app.services.auth.session_manager import SessionManager
 from app.models.users import AdminUser, Doctor, PharmacyUser
 from app.models.phone_auth import PhoneAuthAccount, PhoneOtpChallenge
 from app.utils.encryption import encrypt_field, decrypt_field, hash_identifier
+
+
+def _safe_decrypt(value: str) -> str:
+    """Decrypt an encrypted field, falling back to plaintext if decryption fails."""
+    try:
+        return decrypt_field(value)
+    except Exception:
+        return value
+
+
 @dataclass(frozen=True)
 class _ResolvedUser:
     user_id: uuid.UUID
@@ -46,6 +56,7 @@ class _ResolvedUser:
     full_name: str
     role: str
     phone_number: str
+    clinic_id: uuid.UUID | None = None
 
 
 
@@ -91,6 +102,7 @@ def _to_user_response(resolved: _ResolvedUser) -> AuthUserResponse:
         full_name=resolved.full_name,
         role=resolved.role,
         tenant_id=resolved.tenant_id,
+        clinic_id=resolved.clinic_id,
     )
 
 
@@ -162,7 +174,7 @@ async def _load_resolved_user_by_account(db: AsyncSession, account: PhoneAuthAcc
         row = q.scalar_one_or_none()
         if row is None:
             return None
-        return _ResolvedUser(row.id, row.tenant_id, UserType.DOCTOR, row.full_name, "doctor", decrypt_field(account.phone_encrypted))
+        return _ResolvedUser(row.id, row.tenant_id, UserType.DOCTOR, _safe_decrypt(row.full_name), "doctor", decrypt_field(account.phone_encrypted), row.clinic_id)
     if account.user_type == UserType.PHARMACY_USER.value:
         q = await db.execute(
             select(PharmacyUser).where(
@@ -177,7 +189,7 @@ async def _load_resolved_user_by_account(db: AsyncSession, account: PhoneAuthAcc
         row = q.scalar_one_or_none()
         if row is None:
             return None
-        return _ResolvedUser(row.id, row.tenant_id, UserType.PHARMACY_USER, row.full_name, "pharmacy_user", decrypt_field(account.phone_encrypted))
+        return _ResolvedUser(row.id, row.tenant_id, UserType.PHARMACY_USER, _safe_decrypt(row.full_name), "pharmacy_user", decrypt_field(account.phone_encrypted))
     if account.user_type == UserType.ADMIN_USER.value:
         q = await db.execute(
             select(AdminUser).where(
@@ -192,7 +204,7 @@ async def _load_resolved_user_by_account(db: AsyncSession, account: PhoneAuthAcc
         row = q.scalar_one_or_none()
         if row is None:
             return None
-        return _ResolvedUser(row.id, row.tenant_id, UserType.ADMIN_USER, row.full_name, row.role, decrypt_field(account.phone_encrypted))
+        return _ResolvedUser(row.id, row.tenant_id, UserType.ADMIN_USER, _safe_decrypt(row.full_name), row.role, decrypt_field(account.phone_encrypted))
     return None
 
 
@@ -206,11 +218,13 @@ async def login(
     settings = get_settings()
     phone = _normalize_phone(body.phone_number)
     phone_hash = hash_identifier(phone)
+    # "clinic" portal uses the same doctor accounts stored under "doctor"
+    db_portal = "doctor" if body.portal == "clinic" else body.portal
     stmt = (
         select(PhoneAuthAccount)
         .where(
             PhoneAuthAccount.phone_hash == phone_hash,
-            PhoneAuthAccount.portal == body.portal,
+            PhoneAuthAccount.portal == db_portal,
             PhoneAuthAccount.is_active.is_(True),
         )
         .limit(1)

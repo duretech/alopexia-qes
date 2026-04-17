@@ -64,7 +64,7 @@
 
 ```
 ┌──────────────────────────────────────┐
-│   Data in Plaintext (Doctor)         │
+│   Data in Plaintext (Clinic)         │
 │   (On their computer, not encrypted) │
 └──────────────┬───────────────────────┘
                ↓
@@ -252,10 +252,10 @@ Production Environment
 
 ## 🔄 Encryption in Action
 
-### **Scenario 1: Doctor Uploads Prescription**
+### **Scenario 1: Clinic Uploads Prescription**
 
 ```
-Step 1: Doctor selects PDF on computer
+Step 1: Clinic selects PDF on computer
         ↓
 Step 2: PDF travels over HTTPS (TLS encrypted)
         ↓
@@ -263,9 +263,8 @@ Step 3: API receives PDF (decrypts HTTPS)
         ↓
 Step 4: API scans PDF for malware (plaintext)
         ↓
-Step 5: API extracts metadata
-        ├─ Patient ID → encrypted before storage
-        └─ Medication → encrypted before storage
+Step 5: API validates idempotency key
+        └─ Prevents duplicate uploads
         ↓
 Step 6: API encrypts PDF with AES-256
         ├─ Retrieves key from Key Vault
@@ -277,7 +276,7 @@ Step 7: API stores encrypted PDF in Azure
         ├─ Encrypted file + encrypted metadata
         └─ Only reference stored in DB
         ↓
-Result: Doctor can see uploaded prescription
+Result: Clinic can see uploaded prescription
         Pharmacy cannot see PDF content without key
         Only authorized users can decrypt
 ```

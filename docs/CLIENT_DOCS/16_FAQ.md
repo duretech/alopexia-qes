@@ -4,7 +4,7 @@
 
 ### **Q: What is QES Flow?**
 
-A: QES Flow is a cloud-based prescription management system that allows doctors to upload digitally signed prescriptions, which are verified by a Qualified Trust Service Provider (Dokobit), encrypted, and made available to pharmacies for dispensing. All actions are logged in an immutable audit trail.
+A: QES Flow is a cloud-based prescription management system that allows clinics to upload digitally signed prescriptions, which are verified by a Qualified Trust Service Provider (Dokobit), encrypted, and made available to pharmacies for dispensing. All actions are logged in an immutable audit trail.
 
 ---
 
@@ -86,10 +86,10 @@ If Dokobit Unavailable:
 ├─ System automatically retries every 5 minutes
 ├─ User sees: "Verification in progress"
 ├─ After 24 hours: marked as failed
-├─ Doctor notified to resubmit
+├─ Clinic notified to resubmit
 
 During Outage:
-├─ Doctor: Can upload (stored)
+├─ Clinic: Can upload (stored)
 ├─ Pharmacy: Cannot download (not verified)
 ├─ System: Retrying verification automatically
 └─ Timeline: Usually resolves within hours
@@ -97,7 +97,7 @@ During Outage:
 Maximum Downtime Impact:
 ├─ Prescriptions can be verified for 24 hours after upload
 ├─ If not verified in 24h: marked failed
-├─ Doctor must resubmit
+├─ Clinic must resubmit
 ```
 
 ---
@@ -141,13 +141,13 @@ A: No. Prescriptions are immutable and legally protected:
 
 ```
 Cannot Delete:
-├─ Doctor cannot delete
+├─ Clinic cannot delete
 ├─ Pharmacist cannot delete
 ├─ Clinic admin cannot delete
 └─ Even platform admin cannot fully delete
 
 Can Be "Revoked":
-├─ Doctor can revoke (mark as cancelled)
+├─ Clinic can revoke (mark as cancelled)
 ├─ Shows in audit trail (reason logged)
 ├─ Prescription not available to pharmacy
 └─ Immutable (cannot undo revocation)
@@ -303,7 +303,7 @@ Time:
 A: Follow these steps:
 
 ```
-1. Login to doctor portal
+1. Login to clinic portal
 2. Click: "Upload Prescription"
 3. Select: Signed PDF file
 4. Enter:
@@ -337,7 +337,7 @@ A: Resubmit with a properly signed PDF:
 Verification Failed Because:
 ├─ No digital signature in PDF (not signed)
 ├─ Invalid signature (corrupted file)
-├─ Certificate expired (doctor's cert outdated)
+├─ Certificate expired (clinic's cert outdated)
 ├─ Certificate revoked (license issue)
 └─ Not trusted issuer (wrong type of signature)
 
@@ -349,7 +349,7 @@ What to Do:
 5. Resubmit: New signed PDF
 6. System: Retries verification
 
-For Doctor:
+For Clinic:
 ├─ Use proper signature tool (not just "sign document")
 ├─ Ensure digital certificate is valid
 ├─ Update certificate if expired
@@ -358,7 +358,7 @@ For Doctor:
 
 Support:
 ├─ Contact: support@qesflow.com
-└─ Include: Doctor name, clinic, error message
+└─ Include: Clinic name, error message
 ```
 
 ---
@@ -369,7 +369,7 @@ A: Yes, but only before dispensing:
 
 ```
 Before Dispensing:
-├─ Doctor: Click "Revoke"
+├─ Clinic: Click "Revoke"
 ├─ Select: Reason
 ├─ Confirm: Revocation
 ├─ Result: Pharmacy cannot download
@@ -454,7 +454,7 @@ A: Web app works on mobile (responsive design):
 ```
 Access via:
 ├─ Mobile browser (Chrome, Safari)
-├─ URL: https://your-domain.com/doctor
+├─ URL: https://your-domain.com/clinic
 ├─ URL: https://your-domain.com/pharmacy
 ├─ URL: https://your-domain.com/admin
 

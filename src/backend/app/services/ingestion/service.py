@@ -101,7 +101,7 @@ async def ingest_prescription(
     declared_content_type: str | None = None,
     # Identity context (from authenticated user)
     doctor_id: uuid.UUID,
-    patient_id: uuid.UUID,
+    patient_id: uuid.UUID | None,
     tenant_id: uuid.UUID,
     clinic_id: uuid.UUID,
     # Client-provided idempotency
