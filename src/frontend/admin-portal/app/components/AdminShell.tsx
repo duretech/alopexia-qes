@@ -143,6 +143,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       navItems={navItems}
       user={session.user}
       onLogout={onLogout}
+      logoSrc="/admin/logo.png"
     >
       {children}
     </AppShell>

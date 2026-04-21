@@ -16,7 +16,7 @@ interface PrescriptionDetail {
   verification_status: string | null;
   dispensing_status: string | null;
   doctor_id: string;
-  patient_id: string;
+  patient_id: string | null;
   clinic_id: string;
   prescribed_date: string | null;
   created_at: string | null;
@@ -236,8 +236,8 @@ export default function PharmacyPrescriptionDetailPage() {
         <Card padding="lg">
           <CardHeader title="Prescription details" />
           <dl className="qes-dl">
-            <dt>Clinic ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
-            <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd>
+            <dt>Clinic ID</dt><dd className="qes-mono">{rx.clinic_id ?? "—"}</dd>
+            {/* <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd> */}
             <dt>Prescribed</dt><dd>{rx.prescribed_date ? new Date(rx.prescribed_date).toLocaleDateString("es-ES") : "—"}</dd>
             <dt>Created</dt><dd>{rx.created_at ? new Date(rx.created_at).toLocaleString("es-ES") : "—"}</dd>
             <dt>External ref</dt><dd>{rx.external_prescription_id ?? "—"}</dd>
@@ -405,7 +405,7 @@ export default function PharmacyPrescriptionDetailPage() {
           <TextField
             label="Formulation registration number (Reg#)"
             value={dispenseForm.formulation_registration_number}
-            onChange={(e) => setDispenseForm((f) => ({ ...f, formulation_registration_number: e.target.value }))}
+            onChange={({ target: { value } }: { target: { value: string } }) => setDispenseForm((f) => ({ ...f, formulation_registration_number: value }))}
             placeholder="e.g. FM-2024-00123"
             hint="Required for compounded medicines (formulación magistral)"
           />
@@ -413,21 +413,21 @@ export default function PharmacyPrescriptionDetailPage() {
           <TextField
             label="Batch / lot number"
             value={dispenseForm.batch_number}
-            onChange={(e) => setDispenseForm((f) => ({ ...f, batch_number: e.target.value }))}
+            onChange={({ target: { value } }: { target: { value: string } }) => setDispenseForm((f) => ({ ...f, batch_number: value }))}
             placeholder="e.g. LOT-20240315"
           />
 
           <TextField
             label="Quantity dispensed"
             value={dispenseForm.quantity_dispensed}
-            onChange={(e) => setDispenseForm((f) => ({ ...f, quantity_dispensed: e.target.value }))}
+            onChange={({ target: { value } }: { target: { value: string } }) => setDispenseForm((f) => ({ ...f, quantity_dispensed: value }))}
             placeholder="e.g. 30 capsules / 250ml"
           />
 
           <TextField
             label="Pharmacist notes"
             value={dispenseForm.notes}
-            onChange={(e) => setDispenseForm((f) => ({ ...f, notes: e.target.value }))}
+            onChange={({ target: { value } }: { target: { value: string } }) => setDispenseForm((f) => ({ ...f, notes: value }))}
             placeholder="Optional notes about dispensing"
           />
 

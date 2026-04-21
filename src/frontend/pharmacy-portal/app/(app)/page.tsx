@@ -7,7 +7,7 @@ import { Button } from "@qes-ui/components/Button";
 import { Card, CardHeader } from "@qes-ui/components/Card";
 import { EmptyState } from "@qes-ui/components/EmptyState";
 import { Spinner } from "@qes-ui/components/Spinner";
-import { apiFetch, formatApiError } from "@qes-ui/lib/api";
+import { apiFetch } from "@qes-ui/lib/api";
 
 interface Prescription {
   id: string;
@@ -15,7 +15,7 @@ interface Prescription {
   verification_status: string | null;
   dispensing_status: string | null;
   doctor_id: string;
-  patient_id: string;
+  patient_id: string | null;
   created_at: string | null;
 }
 

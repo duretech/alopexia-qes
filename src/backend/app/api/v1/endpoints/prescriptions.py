@@ -19,6 +19,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.models.audit import AuditEvent
@@ -138,7 +139,7 @@ async def get_prescription_detail(
         "verification_status": rx.verification_status,
         "dispensing_status": rx.dispensing_status,
         "doctor_id": str(rx.doctor_id),
-        "patient_id": str(rx.patient_id),
+        "patient_id": str(rx.patient_id) if rx.patient_id else None,
         "clinic_id": str(rx.clinic_id),
         "upload_checksum": rx.upload_checksum,
         "prescribed_date": rx.prescribed_date.isoformat() if rx.prescribed_date else None,
@@ -447,7 +448,10 @@ async def upload_prescription(
         raise HTTPException(status_code=422, detail={"error_code": e.code, "message": e.message})
     except IngestionError as e:
         logger.error("upload_failed", error_code=e.code, message=e.message, actor_id=str(user.user_id))
-        raise HTTPException(status_code=500, detail={"error_code": "INGESTION_ERROR", "message": "An internal error occurred during ingestion."})
+        detail: dict = {"error_code": "INGESTION_ERROR", "message": "An internal error occurred during ingestion."}
+        if not get_settings().is_production:
+            detail["debug"] = f"{e.code}: {e.message}"
+        raise HTTPException(status_code=500, detail=detail)
 
     # Emit audit event for the upload
     try:

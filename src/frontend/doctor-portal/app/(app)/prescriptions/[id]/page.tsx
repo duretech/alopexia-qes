@@ -46,7 +46,7 @@ interface PrescriptionDetail {
   verification_status: string | null;
   dispensing_status: string | null;
   doctor_id: string;
-  patient_id: string;
+  patient_id: string | null;
   clinic_id: string;
   upload_checksum: string;
   prescribed_date: string | null;
@@ -210,8 +210,8 @@ export default function PrescriptionDetailPage() {
         <Card padding="lg">
           <CardHeader title="Prescription details" />
           <dl className="qes-dl">
-            <dt>Clinic ID</dt><dd className="qes-mono">{rx.patient_id}</dd>
-            <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd>
+            <dt>Clinic ID</dt><dd className="qes-mono">{rx.clinic_id ?? "—"}</dd>
+            {/* <dt>Doctor ID</dt><dd className="qes-mono">{rx.doctor_id}</dd> */}
             <dt>Prescribed date</dt><dd>{rx.prescribed_date ? new Date(rx.prescribed_date).toLocaleDateString("es-ES") : "—"}</dd>
             <dt>Created</dt><dd>{rx.created_at ? new Date(rx.created_at).toLocaleString("es-ES") : "—"}</dd>
             <dt>External ref</dt><dd>{rx.external_prescription_id ?? "—"}</dd>

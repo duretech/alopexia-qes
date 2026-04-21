@@ -149,7 +149,7 @@ async def get_pharmacy_prescription(
         "verification_status": rx.verification_status,
         "dispensing_status": rx.dispensing_status,
         "doctor_id": str(rx.doctor_id),
-        "patient_id": str(rx.patient_id),
+        "patient_id": str(rx.patient_id) if rx.patient_id else None,
         "clinic_id": str(rx.clinic_id),
         "prescribed_date": rx.prescribed_date.isoformat() if rx.prescribed_date else None,
         "created_at": rx.created_at.isoformat() if rx.created_at else None,

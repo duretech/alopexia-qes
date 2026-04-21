@@ -62,6 +62,7 @@ export function DoctorShell({ children }: { children: ReactNode }) {
       navItems={navItems}
       user={session.user}
       onLogout={onLogout}
+      logoSrc="/clinic/logo.png"
     >
       {children}
     </AppShell>

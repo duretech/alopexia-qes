@@ -43,6 +43,7 @@ export function PharmacyShell({ children }: { children: ReactNode }) {
       navItems={navItems}
       user={session.user}
       onLogout={onLogout}
+      logoSrc="/pharmacy/logo.png"
     >
       {children}
     </AppShell>

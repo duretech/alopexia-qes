@@ -5,6 +5,7 @@ const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  basePath: "/pharmacy",
   experimental: { externalDir: true },
   webpack: (config) => {
     config.resolve.alias = {
@@ -15,8 +16,8 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      { source: "/api/:path*", destination: `${api}/api/:path*` },
-      { source: "/health/:path*", destination: `${api}/health/:path*` },
+      { source: "/api/:path*", destination: `${api}/api/:path*`, basePath: false },
+      { source: "/health/:path*", destination: `${api}/health/:path*`, basePath: false },
     ];
   },
 };

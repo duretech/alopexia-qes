@@ -17,7 +17,7 @@ class PrescriptionListItem(BaseModel):
     verification_status: str | None = None
     dispensing_status: str | None = None
     doctor_id: UUID
-    patient_id: UUID
+    patient_id: UUID | None = None
     upload_checksum: str
     prescribed_date: datetime | None = None
     created_at: datetime | None = None

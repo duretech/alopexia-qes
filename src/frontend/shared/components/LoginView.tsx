@@ -16,10 +16,12 @@ export function LoginView({
   portal,
   heroTitle,
   heroSubtitle,
+  logoSrc = "/logo.png",
 }: {
   portal: PortalKind;
   heroTitle: string;
   heroSubtitle: string;
+  logoSrc?: string;
 }) {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -138,7 +140,8 @@ export function LoginView({
       <div className="qes-login-panel">
         <div className="qes-login-card">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/logo.png`} alt="Centa Bio Lab" style={{ height: "48px", width: "auto", marginBottom: "1rem" }} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoSrc} alt="Centa Bio Lab" style={{ height: "48px", width: "auto", marginBottom: "1rem" }} />
           {state.step === "phone" && (
             <>
               <h2>Sign in with phone</h2>

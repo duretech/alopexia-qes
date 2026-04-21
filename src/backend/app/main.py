@@ -217,14 +217,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         exc_info=True,
     )
 
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "internal_server_error",
-            "detail": "An internal error occurred. Contact support if this persists.",
-            "request_id": request_id,
-        },
-    )
+    content: dict = {
+        "error": "internal_server_error",
+        "detail": "An internal error occurred. Contact support if this persists.",
+        "request_id": request_id,
+    }
+    if not settings.is_production:
+        content["debug"] = f"{type(exc).__name__}: {exc}"
+
+    return JSONResponse(status_code=500, content=content)
 
 
 def _status_to_error_code(status: int) -> str:

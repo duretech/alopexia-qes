@@ -248,7 +248,7 @@ async def ingest_prescription(
         )
         raise IngestionError(
             code="STORAGE_FAILED",
-            message="Failed to store document in object storage",
+            message=f"Failed to store document in object storage: {type(e).__name__}: {e}",
         ) from e
 
     # ── Step 9: Create DB records ────────────────────────────────────────

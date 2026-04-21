@@ -36,7 +36,9 @@ export default function PrescriptionsPage() {
       try {
         const res = await apiFetch("clinic", "/api/v1/prescriptions");
         if (!res.ok) {
-          if (!cancelled) setError("Could not load prescriptions.");
+          let detail = "";
+          try { const body = await res.json(); detail = JSON.stringify(body.detail ?? body); } catch { /* ignore */ }
+          if (!cancelled) setError(`Could not load prescriptions (HTTP ${res.status}${detail ? `: ${detail}` : ""}).`);
           return;
         }
         const data = (await res.json()) as Prescription[];

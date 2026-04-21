@@ -6,7 +6,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "/clinic";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  basePath,
+  basePath: "/clinic",
   experimental: {
     externalDir: true,
   },
