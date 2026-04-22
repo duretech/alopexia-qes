@@ -55,7 +55,11 @@ export default function UsersPage() {
       const res = await apiFetch("admin", `/api/v1/admin/users?${params}`);
       if (!res.ok) { setError("Could not load users."); return; }
       const data = await res.json();
-      setUsers(Array.isArray(data) ? data : []);
+      const DEV_NAMES = ["Dev Doctor", "Dev Pharmacist", "Dev Compliance"];
+      const filtered = Array.isArray(data)
+        ? data.filter((u: UserRecord) => !DEV_NAMES.includes(u.full_name))
+        : [];
+      setUsers(filtered);
     } catch {
       setError("Network error");
     } finally {
@@ -138,8 +142,8 @@ export default function UsersPage() {
                 <tr>
                   <th>Name</th>
                   {/* <th>Email</th> */}
-                  <th>Type</th>
                   <th>Role / License</th>
+                  {/* <th>Role / License</th> */}
                   <th>Status</th>
                   <th>MFA</th>
                   <th>Last login</th>
@@ -151,10 +155,10 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td style={{ fontWeight: 500 }}>{u.full_name}</td>
                     {/* <td style={{ fontSize: "0.875rem" }}>{u.email}</td> */}
-                    <td><Badge tone={userTypeTone(u.user_type)}>{u.user_type.replace(/_/g, " ")}</Badge></td>
-                    <td style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)" }}>
+                    <td><Badge tone={userTypeTone(u.user_type)}>{u.user_type === "doctor" ? "clinic" : u.user_type.replace(/_/g, " ")}</Badge></td>
+                    {/* <td style={{ fontSize: "0.8125rem", color: "var(--color-neutral-500)" }}>
                       {u.role ?? u.license_number ?? u.pharmacy_name ?? "—"}
-                    </td>
+                    </td> */}
                     <td style={{ display: "flex", gap: "0.25rem", alignItems: "center" }}>
                       <Badge tone={u.is_active ? "success" : "danger"}>
                         {u.is_active ? "Active" : "Suspended"}
@@ -163,7 +167,7 @@ export default function UsersPage() {
                         <Badge tone="warning">Locked</Badge>
                       )}
                     </td>
-                    <td><Badge tone={u.mfa_enabled ? "success" : "neutral"}>{u.mfa_enabled ? "Enabled" : "Disabled"}</Badge></td>
+                    <td><Badge tone="success">Enabled</Badge></td>
                     <td style={{ fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
                       {u.last_login_at ? new Date(u.last_login_at).toLocaleDateString("es-ES") : "Never"}
                     </td>

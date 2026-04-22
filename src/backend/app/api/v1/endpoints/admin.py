@@ -44,7 +44,7 @@ import uuid as uuid_lib
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -780,6 +780,47 @@ async def download_evidence(
         "mime_type": ev.mime_type,
         "file_size_bytes": ev.file_size_bytes,
     }
+
+
+@router.get("/evidence/{evidence_id}/view", summary="Stream evidence file bytes for inline viewing")
+async def view_evidence(
+    evidence_id: UUID,
+    user: AuthenticatedUser = Depends(require_permission(Permission.EVIDENCE_VIEW)),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    stmt = select(EvidenceFile).where(
+        EvidenceFile.id == evidence_id, EvidenceFile.tenant_id == user.tenant_id,
+    )
+    result = await db.execute(stmt)
+    ev = result.scalar_one_or_none()
+    if ev is None:
+        raise HTTPException(status_code=404, detail="Evidence file not found")
+
+    from app.services.storage import get_storage_backend
+    storage = get_storage_backend()
+    try:
+        file_bytes = await storage.get_object(ev.storage_bucket, ev.storage_key)
+    except Exception as e:
+        logger.error("evidence_view_failed", evidence_id=str(evidence_id), error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve evidence file")
+
+    return Response(
+        content=file_bytes,
+        media_type=ev.mime_type or "application/octet-stream",
+        headers={"Content-Disposition": f"inline; filename=\"evidence-{str(evidence_id)[:8]}.{_mime_ext(ev.mime_type)}\""},
+    )
+
+
+def _mime_ext(mime_type: str | None) -> str:
+    exts = {
+        "application/pdf": "pdf",
+        "application/json": "json",
+        "application/xml": "xml",
+        "text/xml": "xml",
+        "text/plain": "txt",
+        "application/octet-stream": "bin",
+    }
+    return exts.get(mime_type or "", "bin")
 
 
 # ── System Health ─────────────────────────────────────────────────────────

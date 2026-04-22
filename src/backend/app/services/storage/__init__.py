@@ -21,11 +21,22 @@ from app.services.storage.interface import (
 def get_storage_backend() -> StorageBackend:
     """Factory: return the configured storage backend.
 
-    Uses S3StorageBackend if S3 credentials are configured,
-    otherwise falls back to LocalStorageBackend for dev/testing.
+    Priority:
+      1. Azure Blob Storage — when AZURE_STORAGE_CONNECTION_STRING or
+         AZURE_STORAGE_ACCOUNT_NAME is set.
+      2. S3-compatible — when S3_ACCESS_KEY_ID is set.
+      3. LocalStorageBackend — dev/testing fallback.
     """
     from app.core.config import get_settings
     settings = get_settings()
+
+    if settings.azure_storage_connection_string or settings.azure_storage_account_name:
+        from app.services.storage.azure_blob import AzureBlobStorageBackend
+        return AzureBlobStorageBackend(
+            connection_string=settings.azure_storage_connection_string,
+            account_name=settings.azure_storage_account_name,
+            account_key=settings.azure_storage_account_key,
+        )
 
     if settings.s3_access_key_id and settings.s3_secret_access_key:
         from app.services.storage.s3 import S3StorageBackend

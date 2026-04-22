@@ -21,12 +21,19 @@ interface EvidenceFile {
   created_at: string | null;
 }
 
+interface ViewerState {
+  file: EvidenceFile;
+  url: string;
+}
+
 export default function EvidencePage() {
   const [files, setFiles] = useState<EvidenceFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterPrescription, setFilterPrescription] = useState("");
   const [filterType, setFilterType] = useState("");
+  const [viewer, setViewer] = useState<ViewerState | null>(null);
+  const [viewerLoading, setViewerLoading] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -48,6 +55,28 @@ export default function EvidencePage() {
 
   useEffect(() => { load(); }, [filterPrescription, filterType]);
 
+  async function handleView(f: EvidenceFile) {
+    setViewerLoading(f.id);
+    try {
+      const res = await apiFetch("admin", `/api/v1/admin/evidence/${f.id}/view`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        setViewer({ file: f, url });
+      } else {
+        setError("Failed to load evidence file");
+      }
+    } catch {
+      setError("Network error loading file");
+    } finally {
+      setViewerLoading(null);
+    }
+  }
+
+  function closeViewer() {
+    if (viewer) URL.revokeObjectURL(viewer.url);
+    setViewer(null);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -117,10 +146,11 @@ export default function EvidencePage() {
                     <td>
                       <Button
                         variant="secondary"
-                        disabled
-                        style={{ padding: "0.25rem 0.75rem", fontSize: "0.8125rem", opacity: 0.4, cursor: "not-allowed" }}
+                        onClick={() => handleView(f)}
+                        disabled={viewerLoading === f.id}
+                        style={{ padding: "0.25rem 0.75rem", fontSize: "0.8125rem" }}
                       >
-                        Download
+                        {viewerLoading === f.id ? "Loading…" : "View"}
                       </Button>
                     </td>
                   </tr>
@@ -130,6 +160,43 @@ export default function EvidencePage() {
           </div>
         )}
       </Card>
+
+      {/* Evidence Viewer Modal */}
+      {viewer && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}
+          onClick={closeViewer}
+        >
+          <div
+            style={{ width: "90%", height: "90vh", maxWidth: "1024px", background: "white", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--color-neutral-200)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>
+                  {viewer.file.evidence_type.replace(/_/g, " ")}
+                </h2>
+                <div style={{ marginTop: "0.25rem", display: "flex", gap: "0.75rem", fontSize: "0.8125rem", color: "var(--color-neutral-500)" }}>
+                  <span className="qes-mono">{viewer.file.mime_type}</span>
+                  <span>{(viewer.file.file_size_bytes / 1024).toFixed(1)} KB</span>
+                  <span className="qes-mono">rx: {viewer.file.prescription_id.slice(0, 8)}…</span>
+                </div>
+              </div>
+              <Button variant="ghost" onClick={closeViewer} style={{ padding: "0.5rem" }}>✕</Button>
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", background: "var(--color-neutral-100)" }}>
+              <iframe
+                src={viewer.url}
+                style={{ width: "100%", height: "100%", border: "none" }}
+                title="Evidence file"
+              />
+            </div>
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid var(--color-neutral-200)", background: "var(--color-neutral-50)", display: "flex", justifyContent: "flex-end" }}>
+              <Button variant="ghost" onClick={closeViewer}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

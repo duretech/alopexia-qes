@@ -15,7 +15,7 @@ import json
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -197,6 +197,48 @@ async def get_prescription_detail(
             for e in evidence
         ],
     }
+
+
+@router.get(
+    "/{prescription_id}/pdf",
+    summary="Stream prescription PDF bytes for inline viewing",
+)
+async def stream_prescription_pdf(
+    prescription_id: UUID,
+    user: AuthenticatedUser = Depends(require_permission(Permission.PRESCRIPTION_VIEW_OWN)),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    settings = get_settings()
+
+    stmt = select(Prescription).where(
+        Prescription.id == prescription_id,
+        Prescription.tenant_id == user.tenant_id,
+        Prescription.doctor_id == user.user_id,
+        Prescription.is_deleted.is_(False),
+    )
+    result = await db.execute(stmt)
+    rx = result.scalar_one_or_none()
+
+    if rx is None:
+        raise HTTPException(status_code=404, detail="Prescription not found")
+
+    from app.services.storage import get_storage_backend
+    storage = get_storage_backend()
+
+    try:
+        pdf_bytes = await storage.get_object(
+            settings.prescription_storage_container,
+            rx.document_storage_key,
+        )
+    except Exception as e:
+        logger.error("pdf_stream_failed", prescription_id=str(prescription_id), error=str(e))
+        raise HTTPException(status_code=500, detail="Failed to retrieve PDF")
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=\"prescription-{str(prescription_id)[:8]}.pdf\""},
+    )
 
 
 @router.post(

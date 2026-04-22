@@ -38,8 +38,8 @@ export function AppShell(props: AppShellProps) {
       <aside className={`qes-sidebar ${menuOpen ? "qes-sidebar--open" : ""}`}>
         <div className="qes-sidebar__brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} alt="Centa Bio Lab" style={{ height: "40px", width: "auto", marginBottom: "0.5rem", filter: "brightness(0) invert(1)" }} />
-          <h1 className="qes-sidebar__title">{portalLabel}</h1>
+          <img src={logoSrc} alt="Centa Bio Lab" style={{ height: "40px", width: "auto", filter: "brightness(0) invert(1)" }} />
+          {/* <h1 className="qes-sidebar__title">{portalLabel}</h1> */}
         </div>
         <nav className="qes-sidebar__nav" aria-label="Main">
           {navItems.map((item) => {

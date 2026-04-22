@@ -118,7 +118,7 @@ async def verify_prescription(
 
     try:
         pdf_data = await storage.get_object(
-            settings.s3_prescription_bucket,
+            settings.prescription_storage_container,
             prescription.document_storage_key,
         )
     except Exception as e:
@@ -166,7 +166,7 @@ async def verify_prescription(
         raw_key = f"{tenant_id}/verification/{verification_id}/raw_response"
         try:
             await storage.store_object(
-                settings.s3_evidence_bucket,
+                settings.evidence_storage_container,
                 raw_key,
                 qtsp_result.raw_response,
                 content_type=qtsp_result.raw_response_content_type,
@@ -190,7 +190,7 @@ async def verify_prescription(
         )
         try:
             store_result = await storage.store_object(
-                settings.s3_evidence_bucket,
+                settings.evidence_storage_container,
                 artifact_key,
                 artifact.data,
                 content_type=artifact.content_type,
@@ -211,7 +211,7 @@ async def verify_prescription(
             prescription_id=prescription_id,
             verification_result_id=verification_id,
             storage_key=artifact_key,
-            storage_bucket=settings.s3_evidence_bucket,
+            storage_bucket=settings.evidence_storage_container,
             checksum_sha256=artifact_checksum,
             file_size_bytes=len(artifact.data),
             mime_type=artifact.content_type,

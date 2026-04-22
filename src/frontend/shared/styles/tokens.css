@@ -3,9 +3,10 @@
  * Portals override --accent-* via [data-portal] on <html> or a wrapper.
  */
 
+@import url("https://fonts.googleapis.com/css2?family=Questrial&display=swap");
+
 :root {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Questrial", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
 
   --neutral-0: #ffffff;
@@ -81,7 +82,8 @@
 html {
   font-family: var(--font-sans);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.75;
+  letter-spacing: 0.035em;
   color: var(--neutral-800);
   background: var(--neutral-50);
   -webkit-font-smoothing: antialiased;

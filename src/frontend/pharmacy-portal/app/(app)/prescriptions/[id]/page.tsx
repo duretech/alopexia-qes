@@ -94,6 +94,8 @@ export default function PharmacyPrescriptionDetailPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -134,6 +136,28 @@ export default function PharmacyPrescriptionDetailPage() {
     } catch {
       setError("Network error");
     }
+  }
+
+  async function handleViewPdf() {
+    setPdfLoading(true);
+    try {
+      const res = await apiFetch("pharmacy", `/api/v1/pharmacy/prescriptions/${id}/pdf`);
+      if (res.ok) {
+        const blob = await res.blob();
+        setPdfUrl(URL.createObjectURL(blob));
+      } else {
+        setError("Failed to load PDF");
+      }
+    } catch {
+      setError("Network error loading PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
+  function handleClosePdf() {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
   }
 
   async function handleDispense() {
@@ -223,6 +247,9 @@ export default function PharmacyPrescriptionDetailPage() {
           </div>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <Badge tone={statusTone(rx.status)}>{rx.status.replace(/_/g, " ")}</Badge>
+            <Button variant="secondary" onClick={handleViewPdf} disabled={pdfLoading}>
+              {pdfLoading ? "Loading…" : "View PDF"}
+            </Button>
             {/* <Button variant="secondary" onClick={handleDownload}>Download PDF</Button> */}
             {canDispense && (
               <Button variant="primary" onClick={() => setDispenseOpen(true)}>Confirm dispensing</Button>
@@ -458,6 +485,36 @@ export default function PharmacyPrescriptionDetailPage() {
           placeholder="Enter your note about this prescription"
         />
       </Modal>
+
+      {/* PDF Viewer Modal */}
+      {pdfUrl && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}
+          onClick={handleClosePdf}
+        >
+          <div
+            style={{ width: "90%", height: "90vh", maxWidth: "960px", background: "white", borderRadius: "var(--radius-lg)", display: "flex", flexDirection: "column", overflow: "hidden" }}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+          >
+            <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--color-neutral-200)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 600 }}>Prescription PDF</h2>
+                <p style={{ margin: "0.25rem 0 0", fontSize: "0.875rem", color: "var(--color-neutral-500)" }}>
+                  {rx.id}
+                </p>
+              </div>
+              <Button variant="ghost" onClick={handleClosePdf} style={{ padding: "0.5rem" }}>✕</Button>
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", background: "var(--color-neutral-100)" }}>
+              <iframe src={pdfUrl} style={{ width: "100%", height: "100%", border: "none" }} title="Prescription PDF" />
+            </div>
+            <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid var(--color-neutral-200)", background: "var(--color-neutral-50)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <Button variant="secondary" onClick={handleDownload}>Download</Button>
+              <Button variant="ghost" onClick={handleClosePdf}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

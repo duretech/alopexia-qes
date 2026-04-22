@@ -225,7 +225,7 @@ async def ingest_prescription(
         from app.services.storage import get_storage_backend
         storage = get_storage_backend()
 
-    bucket = settings.s3_prescription_bucket
+    bucket = settings.prescription_storage_container
     storage_key = _generate_storage_key(tenant_id, checksum)
 
     try:

@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     s3_audit_export_bucket: str = Field(default="qesflow-audit-exports", alias="S3_AUDIT_EXPORT_BUCKET")
     s3_use_ssl: bool = Field(default=True, alias="S3_USE_SSL")
 
+    # Azure Blob Storage (alternative to S3; takes precedence when set)
+    azure_storage_connection_string: str = Field(default="", alias="AZURE_STORAGE_CONNECTION_STRING")
+    azure_storage_account_name: str = Field(default="", alias="AZURE_STORAGE_ACCOUNT_NAME")
+    azure_storage_account_key: str = Field(default="", alias="AZURE_STORAGE_ACCOUNT_KEY")
+    azure_prescription_container: str = Field(default="prescriptions", alias="AZURE_PRESCRIPTION_CONTAINER")
+    azure_evidence_container: str = Field(default="evidence", alias="AZURE_EVIDENCE_CONTAINER")
+    azure_audit_export_container: str = Field(default="audit-exports", alias="AZURE_AUDIT_EXPORT_CONTAINER")
+
     # SQS
     sqs_endpoint_url: Optional[str] = Field(default=None, alias="SQS_ENDPOINT_URL")
     sqs_region: str = Field(default="eu-west-1", alias="SQS_REGION")
@@ -94,6 +102,22 @@ class Settings(BaseSettings):
     @property
     def max_upload_size_bytes(self) -> int:
         return self.max_upload_size_mb * 1024 * 1024
+
+    @property
+    def _use_azure(self) -> bool:
+        return bool(self.azure_storage_connection_string or self.azure_storage_account_name)
+
+    @property
+    def prescription_storage_container(self) -> str:
+        return self.azure_prescription_container if self._use_azure else self.s3_prescription_bucket
+
+    @property
+    def evidence_storage_container(self) -> str:
+        return self.azure_evidence_container if self._use_azure else self.s3_evidence_bucket
+
+    @property
+    def audit_storage_container(self) -> str:
+        return self.azure_audit_export_container if self._use_azure else self.s3_audit_export_bucket
 
     @property
     def is_production(self) -> bool:
