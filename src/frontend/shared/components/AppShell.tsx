@@ -57,7 +57,7 @@ export function AppShell(props: AppShellProps) {
             );
           })}
         </nav>
-        <div className="qes-sidebar__foot">© QES Flow</div>
+        <div className="qes-sidebar__foot">© QTSP Flow</div>
       </aside>
       <div className="qes-main">
         <header className="qes-topbar">

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "QES Flow — Pharmacy Portal",
+  title: "QTSP Flow — Pharmacy Portal",
   description: "Verified prescriptions and dispensing workflow",
 };
 
