@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "react-qr-code": path.join(process.cwd(), "node_modules", "react-qr-code"),
+      canvas: false,
     };
     return config;
   },

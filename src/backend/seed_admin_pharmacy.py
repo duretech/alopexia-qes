@@ -98,15 +98,17 @@ async def main() -> None:
                 f"""
                 INSERT INTO {SCHEMA}.phone_auth_accounts (
                     id, tenant_id, user_id, user_type, portal,
-                    phone_hash, phone_encrypted, pin_encrypted, is_active
+                    phone_hash, phone_encrypted, temp_pin_encrypted, pin_encrypted, pin_set, is_active
                 )
-                VALUES ($1, $2, $3, 'admin_user', 'admin', $4, $5, $6, TRUE)
+                VALUES ($1, $2, $3, 'admin_user', 'admin', $4, $5, $6, NULL, FALSE, TRUE)
                 ON CONFLICT ON CONSTRAINT uq_phone_auth_tenant_phone_portal
                     DO UPDATE SET
-                        user_id         = EXCLUDED.user_id,
-                        phone_encrypted = EXCLUDED.phone_encrypted,
-                        pin_encrypted   = EXCLUDED.pin_encrypted,
-                        is_active       = TRUE
+                        user_id             = EXCLUDED.user_id,
+                        phone_encrypted     = EXCLUDED.phone_encrypted,
+                        temp_pin_encrypted  = EXCLUDED.temp_pin_encrypted,
+                        pin_encrypted       = NULL,
+                        pin_set             = FALSE,
+                        is_active           = TRUE
                 """,
                 uuid.uuid4(), tenant_id, admin_id,
                 hash_identifier(phone_norm),
@@ -114,7 +116,7 @@ async def main() -> None:
                 encrypt_field(ADMIN["pin"]),
             )
             print(f"  phone      : {ADMIN['phone']}")
-            print(f"  PIN        : {ADMIN['pin']}")
+            print(f"  temp PIN   : {ADMIN['pin']}  (user must set own PIN on first login)")
             print(f"  role       : {ADMIN['role']}")
             print()
 
@@ -152,15 +154,17 @@ async def main() -> None:
                 f"""
                 INSERT INTO {SCHEMA}.phone_auth_accounts (
                     id, tenant_id, user_id, user_type, portal,
-                    phone_hash, phone_encrypted, pin_encrypted, is_active
+                    phone_hash, phone_encrypted, temp_pin_encrypted, pin_encrypted, pin_set, is_active
                 )
-                VALUES ($1, $2, $3, 'pharmacy_user', 'pharmacy', $4, $5, $6, TRUE)
+                VALUES ($1, $2, $3, 'pharmacy_user', 'pharmacy', $4, $5, $6, NULL, FALSE, TRUE)
                 ON CONFLICT ON CONSTRAINT uq_phone_auth_tenant_phone_portal
                     DO UPDATE SET
-                        user_id         = EXCLUDED.user_id,
-                        phone_encrypted = EXCLUDED.phone_encrypted,
-                        pin_encrypted   = EXCLUDED.pin_encrypted,
-                        is_active       = TRUE
+                        user_id             = EXCLUDED.user_id,
+                        phone_encrypted     = EXCLUDED.phone_encrypted,
+                        temp_pin_encrypted  = EXCLUDED.temp_pin_encrypted,
+                        pin_encrypted       = NULL,
+                        pin_set             = FALSE,
+                        is_active           = TRUE
                 """,
                 uuid.uuid4(), tenant_id, pharmacy_id,
                 hash_identifier(phone_norm),
@@ -168,20 +172,21 @@ async def main() -> None:
                 encrypt_field(PHARMACY["pin"]),
             )
             print(f"  phone      : {PHARMACY['phone']}")
-            print(f"  PIN        : {PHARMACY['pin']}")
+            print(f"  temp PIN   : {PHARMACY['pin']}  (user must set own PIN on first login)")
             print()
 
     finally:
         await conn.close()
 
-    print("-" * 54)
-    print(" CREDENTIALS SUMMARY")
-    print("-" * 54)
-    print(f"  {'Role':<20}  {'Phone':<16}  PIN")
-    print(f"  {'-'*20}  {'-'*16}  ------")
+    print("-" * 70)
+    print(" CREDENTIALS SUMMARY  (temp PINs — users must set own PIN on first login)")
+    print("-" * 70)
+    print(f"  {'Role':<20}  {'Phone':<16}  Temp PIN")
+    print(f"  {'-'*20}  {'-'*16}  --------")
     print(f"  {'Admin ('+ADMIN['role']+')':<20}  {ADMIN['phone']:<16}  {ADMIN['pin']}")
     print(f"  {'Pharmacy':<20}  {PHARMACY['phone']:<16}  {PHARMACY['pin']}")
-    print("-" * 54)
+    print("-" * 70)
+    print("NOTE: Temp PINs are stored encrypted. Users set their own PIN on first login.")
     print("Seeding complete.")
 
 

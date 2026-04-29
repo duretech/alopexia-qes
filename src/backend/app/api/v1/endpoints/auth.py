@@ -23,6 +23,8 @@ from app.schemas.auth import (
     OtpRequiredResponse,
     PhoneLoginRequest,
     PinRequiredResponse,
+    PinSetupRequiredResponse,
+    SetPinRequest,
     VerifyOtpRequest,
     VerifyPinRequest,
     LogoutResponse,
@@ -317,7 +319,7 @@ async def verify_otp(
         user_type=account.user_type,
         ttl_seconds=600,
     )
-    return PinRequiredResponse(pin_token=pin_token)
+    return PinRequiredResponse(pin_token=pin_token, pin_set=account.pin_set)
 
 
 @router.post("/pin/verify", response_model=AuthenticatedResponse)
@@ -326,7 +328,12 @@ async def verify_pin(
     body: VerifyPinRequest,
     db: AsyncSession = Depends(get_db),
 ) -> AuthenticatedResponse:
-    """Step 3 (MFA): verify encrypted PIN and create session."""
+    """Step 3 (MFA): verify encrypted PIN and create session.
+
+    If this is the user's first login (pin_set=False), the temporary PIN
+    does not work here. The client receives pin_set=False in the /otp/verify
+    response and must call /pin/setup instead.
+    """
     try:
         claims = decode_pending_token(body.pin_token)
     except JWTError:
@@ -350,12 +357,76 @@ async def verify_pin(
     account = result.scalar_one_or_none()
     if account is None:
         raise HTTPException(status_code=401, detail="Invalid PIN challenge.")
-    if decrypt_field(account.pin_encrypted) != body.pin:
+
+    # First-login accounts must set their PIN via /pin/setup — temp PIN never works here
+    if not account.pin_set:
+        raise HTTPException(
+            status_code=403,
+            detail="PIN not yet set. Please use /auth/pin/setup to create your PIN on first login.",
+        )
+
+    if account.pin_encrypted is None or decrypt_field(account.pin_encrypted) != body.pin:
         raise HTTPException(status_code=401, detail="Incorrect PIN.")
 
     resolved = await _load_resolved_user_by_account(db, account)
     if resolved is None:
         raise HTTPException(status_code=401, detail="User not found for this phone account.")
+    return await _finalize_session(request, db, resolved)
+
+
+@router.post("/pin/setup", response_model=AuthenticatedResponse)
+async def setup_pin(
+    request: Request,
+    body: SetPinRequest,
+    db: AsyncSession = Depends(get_db),
+) -> AuthenticatedResponse:
+    """First-login PIN setup: user chooses their permanent PIN.
+
+    Uses the same pin_token issued by /otp/verify. Only works when pin_set=False.
+    On success, the new PIN replaces the temporary PIN and the user is logged in.
+    """
+    try:
+        claims = decode_pending_token(body.pin_token)
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired PIN token.")
+
+    if claims.get("typ") != "pin_challenge":
+        raise HTTPException(status_code=400, detail="Invalid PIN token type.")
+
+    account_id = uuid.UUID(claims["aid"])
+    tenant_id = uuid.UUID(claims["tid"])
+    stmt = (
+        select(PhoneAuthAccount)
+        .where(
+            PhoneAuthAccount.id == account_id,
+            PhoneAuthAccount.tenant_id == tenant_id,
+            PhoneAuthAccount.is_active.is_(True),
+        )
+        .limit(1)
+    )
+    result = await db.execute(stmt)
+    account = result.scalar_one_or_none()
+    if account is None:
+        raise HTTPException(status_code=401, detail="Invalid PIN token.")
+
+    # Guard: setup only allowed when pin has not yet been set
+    if account.pin_set:
+        raise HTTPException(
+            status_code=409,
+            detail="PIN already set. Use /auth/pin/verify to log in.",
+        )
+
+    # Persist the new PIN, clear the temp PIN, mark account as fully set up
+    account.pin_encrypted = encrypt_field(body.new_pin)
+    account.temp_pin_encrypted = None
+    account.pin_set = True
+    await db.flush()
+
+    resolved = await _load_resolved_user_by_account(db, account)
+    if resolved is None:
+        raise HTTPException(status_code=401, detail="User not found for this phone account.")
+
+    logger.info("pin_setup_complete", account_id=str(account.id), user_id=str(account.user_id))
     return await _finalize_session(request, db, resolved)
 
 

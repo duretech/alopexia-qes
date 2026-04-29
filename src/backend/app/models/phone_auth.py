@@ -21,7 +21,9 @@ class PhoneAuthAccount(Base, TenantScopedMixin, TimestampMixin):
     portal = Column(String(20), nullable=False, comment="doctor, pharmacy, admin")
     phone_hash = Column(String(64), nullable=False, comment="SHA-256 normalized phone for lookup")
     phone_encrypted = Column(String, nullable=False, comment="AES-GCM encrypted phone number")
-    pin_encrypted = Column(String, nullable=False, comment="AES-GCM encrypted PIN")
+    pin_encrypted = Column(String, nullable=True, comment="AES-GCM encrypted user-set PIN; NULL until user completes first-login PIN setup")
+    temp_pin_encrypted = Column(String, nullable=True, comment="AES-GCM encrypted temporary PIN set by admin; cleared after user sets own PIN")
+    pin_set = Column(Boolean, nullable=False, default=False, server_default=text("FALSE"), comment="True once user has set their own permanent PIN")
     is_active = Column(Boolean, nullable=False, default=True, server_default=text("TRUE"))
 
 

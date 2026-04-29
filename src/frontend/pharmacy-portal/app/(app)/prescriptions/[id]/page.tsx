@@ -9,6 +9,7 @@ import { Modal } from "@qes-ui/components/Modal";
 import { Spinner } from "@qes-ui/components/Spinner";
 import { TextField } from "@qes-ui/components/TextField";
 import { apiFetch, formatApiError } from "@qes-ui/lib/api";
+import { PdfViewer } from "@/components/PdfViewer";
 
 interface PrescriptionDetail {
   id: string;
@@ -94,7 +95,7 @@ export default function PharmacyPrescriptionDetailPage() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
@@ -124,27 +125,12 @@ export default function PharmacyPrescriptionDetailPage() {
     return () => { cancelled = true; };
   }, [id]);
 
-  async function handleDownload() {
-    try {
-      const res = await apiFetch("pharmacy", `/api/v1/pharmacy/prescriptions/${id}/download`);
-      if (res.ok) {
-        const data = (await res.json()) as { signed_url: string };
-        window.open(data.signed_url, "_blank", "noopener,noreferrer");
-      } else {
-        setError("Failed to generate download URL");
-      }
-    } catch {
-      setError("Network error");
-    }
-  }
-
   async function handleViewPdf() {
     setPdfLoading(true);
     try {
       const res = await apiFetch("pharmacy", `/api/v1/pharmacy/prescriptions/${id}/pdf`);
       if (res.ok) {
-        const blob = await res.blob();
-        setPdfUrl(URL.createObjectURL(blob));
+        setPdfData(await res.arrayBuffer());
       } else {
         setError("Failed to load PDF");
       }
@@ -156,8 +142,7 @@ export default function PharmacyPrescriptionDetailPage() {
   }
 
   function handleClosePdf() {
-    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
-    setPdfUrl(null);
+    setPdfData(null);
   }
 
   async function handleDispense() {
@@ -487,7 +472,7 @@ export default function PharmacyPrescriptionDetailPage() {
       </Modal>
 
       {/* PDF Viewer Modal */}
-      {pdfUrl && (
+      {pdfData && (
         <div
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}
           onClick={handleClosePdf}
@@ -506,10 +491,9 @@ export default function PharmacyPrescriptionDetailPage() {
               <Button variant="ghost" onClick={handleClosePdf} style={{ padding: "0.5rem" }}>✕</Button>
             </div>
             <div style={{ flex: 1, overflow: "hidden", background: "var(--color-neutral-100)" }}>
-              <iframe src={pdfUrl} style={{ width: "100%", height: "100%", border: "none" }} title="Prescription PDF" />
+              <PdfViewer data={pdfData} />
             </div>
             <div style={{ padding: "1rem 1.5rem", borderTop: "1px solid var(--color-neutral-200)", background: "var(--color-neutral-50)", display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
-              <Button variant="secondary" onClick={handleDownload}>Download</Button>
               <Button variant="ghost" onClick={handleClosePdf}>Close</Button>
             </div>
           </div>

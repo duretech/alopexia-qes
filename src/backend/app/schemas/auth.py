@@ -42,6 +42,13 @@ class OtpRequiredResponse(BaseModel):
 class PinRequiredResponse(BaseModel):
     status: Literal["pin_required"] = "pin_required"
     pin_token: str
+    pin_set: bool = True
+
+
+class PinSetupRequiredResponse(BaseModel):
+    """Returned by /pin/verify when the account has never had a PIN set (first login)."""
+    status: Literal["pin_setup_required"] = "pin_setup_required"
+    detail: str = "First login detected. Please set your PIN to continue."
 
 
 class VerifyOtpRequest(BaseModel):
@@ -56,6 +63,14 @@ class VerifyPinRequest(BaseModel):
 
     pin_token: str
     pin: str = Field(..., min_length=4, max_length=12, pattern=r"^[0-9]+$")
+
+
+class SetPinRequest(BaseModel):
+    """First-login PIN setup. Uses the same pin_token issued after OTP verification."""
+    model_config = ConfigDict(extra="forbid")
+
+    pin_token: str
+    new_pin: str = Field(..., min_length=4, max_length=12, pattern=r"^[0-9]+$")
 
 
 class LogoutResponse(BaseModel):
