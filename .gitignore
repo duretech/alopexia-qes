@@ -56,6 +56,14 @@ docker-compose.override.yml
 credentials.json
 service-account.json
 
+# Audit & scripts
+scripts/
+audit_docs/
+docs/
+
+# Shortcuts
+src/frontend/admin-portal/Downloads - Shortcut.lnk
+
 #deployment files
 admin-portal.zip
 clinic-portal.zip
